@@ -1,1 +1,1570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Math Maze Chase</title>
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --emerald:#046A38; --kelly:#0DB14B; --forest:#044E27; --celery:#B4D38C; --steel:#D6DCDC;
+  --bg:#081510; --panel:#10241a; --panel2:#163222; --text:#f4f8f5; --muted:#a8bfb0;
+  --red:#E4572E; --blue:#3A8DDE; --yellow:#F2C14E; --purple:#A66CF0;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;touch-action:manipulation;background:var(--bg);color:var(--text);
+  font-family:Lexend,Verdana,system-ui,sans-serif;-webkit-tap-highlight-color:transparent}
+button{font-family:inherit;cursor:pointer}
+.screen{display:none}
+.screen.active{display:flex}
 
+/* ---------- Title ---------- */
+#title{min-height:100%;justify-content:center;padding:24px 16px}
+.titleWrap{width:100%;max-width:760px}
+h1{font-size:clamp(2.2rem,6vw,3.4rem);margin:8px 0 4px;color:var(--celery);letter-spacing:.5px}
+.sub{font-size:1.2rem;color:var(--muted);margin:0 0 18px}
+.how{background:var(--panel);border:2px solid var(--emerald);border-radius:16px;padding:14px 18px;margin-bottom:18px;font-size:1.08rem;line-height:1.55}
+.how b{color:var(--celery)}
+.label{font-weight:600;margin:14px 0 8px;font-size:1.05rem}
+.pickRow{display:flex;gap:10px;flex-wrap:wrap}
+.pick{font-size:2rem;width:64px;height:64px;border-radius:14px;border:3px solid #2a4a38;background:var(--panel)}
+.pick.on{border-color:var(--kelly);background:var(--panel2);box-shadow:0 0 0 3px rgba(13,177,75,.35)}
+.big{display:block;width:100%;margin:22px 0 10px;padding:18px;font-size:1.5rem;font-weight:800;border:0;border-radius:16px;background:var(--kelly);color:#04170c}
+.big:disabled{background:#3b4a41;color:#8a9a90;cursor:not-allowed}
+.ghostBtn{width:100%;padding:12px;font-size:1.05rem;border-radius:12px;border:2px solid #2f5440;background:transparent;color:var(--muted)}
+.warn{color:var(--yellow);font-weight:600;margin-top:6px}
+
+/* ---------- Teacher panel ---------- */
+#teacherPanel{background:var(--panel);border:2px solid #2f5440;border-radius:16px;padding:6px 18px 18px;margin-top:12px}
+#teacherPanel h2{font-size:1.25rem;color:var(--celery);margin:14px 0 4px}
+.seg{display:flex;flex-wrap:wrap;gap:8px}
+.seg button{padding:10px 14px;border-radius:10px;border:2px solid #2f5440;background:var(--panel2);color:var(--text);font-size:1rem}
+.seg button.on{background:var(--emerald);border-color:var(--kelly);font-weight:700}
+.subs{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:8px}
+.subs label{display:flex;gap:10px;align-items:flex-start;background:var(--panel2);border-radius:10px;padding:10px;cursor:pointer;line-height:1.35}
+.subs input{width:20px;height:20px;margin-top:2px;accent-color:var(--kelly);flex:none}
+.toggle{display:flex;gap:10px;align-items:center;margin:8px 0;cursor:pointer}
+.toggle input{width:22px;height:22px;accent-color:var(--kelly)}
+.hint{color:var(--muted);font-size:.92rem;margin:4px 0 0}
+#preview{margin-top:10px;font-size:.98rem;line-height:1.5}
+#preview .pq{background:var(--panel2);border-radius:10px;padding:8px 12px;margin:6px 0}
+#preview .pa{color:var(--celery)}
+
+/* ---------- Game ---------- */
+#game{height:100vh;height:100dvh;flex-direction:column;background:#14062e;--trim:#e9b84a}
+.stage{flex:1;min-height:0;position:relative;overflow:hidden}
+#cv{position:absolute;inset:0;display:block;touch-action:none}
+.hudTop{position:absolute;top:0;left:0;right:0;z-index:2;display:flex;align-items:center;gap:10px;padding:10px 12px;flex-wrap:wrap;pointer-events:none}
+.hudTop>*{pointer-events:auto}
+#hudTime{font-size:2.1rem;font-weight:800;color:#fff;text-shadow:0 2px 8px rgba(0,0,0,.7);min-width:84px;font-variant-numeric:tabular-nums}
+#hudTime.low{color:#ff7070}
+.hudR{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+.pill{background:rgba(0,0,0,.42);color:#fff;border-radius:999px;padding:7px 13px;font-weight:700;font-size:1.02rem;backdrop-filter:blur(3px)}
+.iconBtn{background:rgba(0,0,0,.42);border:2px solid rgba(255,255,255,.22);color:#fff;border-radius:10px;font-size:1.2rem;width:44px;height:40px}
+.meter{flex:1;min-width:220px;text-align:center;font-weight:700;font-size:1.05rem;padding:7px 12px;border-radius:999px;background:rgba(0,0,0,.42);color:#fff;backdrop-filter:blur(3px)}
+.meter.open{background:rgba(110,50,190,.85);color:#fff;animation:glow 1s ease-in-out infinite alternate}
+@keyframes glow{from{box-shadow:0 0 0 rgba(166,108,240,0)}to{box-shadow:0 0 22px rgba(190,140,255,.95)}}
+#qintro{position:absolute;inset:0;z-index:4;display:none;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:20px 16px;background:#05070f;text-align:center;cursor:pointer}
+#qintro.show{display:flex}
+.qiLabel{color:var(--trim);font-weight:800;font-size:clamp(1.1rem,2.6vw,1.6rem);letter-spacing:.5px}
+.qiText{color:#fff;font-weight:800;font-size:clamp(1.6rem,4.4vw,3.2rem);line-height:1.25;max-width:1000px}
+.qiText strong{color:var(--yellow)}
+.vstack{display:inline-block;margin:14px auto 0;font-family:'Courier New',ui-monospace,monospace;font-weight:800;font-size:clamp(1.8rem,5vw,3.4rem);line-height:1.15;text-align:right;color:#fff;letter-spacing:.06em}
+.vstack .vb{border-bottom:5px solid var(--yellow);padding-bottom:4px}
+.vstack .vop{color:var(--yellow)}
+.qiText .vstack{display:table}
+.qiGrid{display:grid;grid-template-columns:1fr 1fr;gap:14px;width:100%;max-width:760px}
+.qiCell{display:flex;align-items:center;justify-content:center;gap:12px;min-height:72px;padding:12px 14px;border:4px solid;border-radius:14px;background:rgba(255,255,255,.06);color:#fff;font-weight:800;font-size:clamp(1.2rem,3vw,2rem);line-height:1.2}
+.qiCell .shape{font-size:1.1em}
+.qiCell.empty{border-color:rgba(255,255,255,.15)!important;color:rgba(255,255,255,.25)}
+.qiGo{color:#d6dcdc;font-weight:700;font-size:clamp(1rem,2.4vw,1.35rem);visibility:hidden;animation:pulseGo 1s ease-in-out infinite alternate}
+.qiGo.show{visibility:visible}
+@keyframes pulseGo{from{opacity:.55}to{opacity:1}}
+#toast{position:absolute;top:70px;left:50%;transform:translateX(-50%);z-index:5;padding:10px 20px;border-radius:12px;font-weight:800;font-size:1.3rem;pointer-events:none;opacity:0;transition:opacity .2s;white-space:nowrap;max-width:95%;overflow:hidden;text-overflow:ellipsis}
+#toast.show{opacity:1}
+#toast.good{background:var(--kelly);color:#04170c}
+#toast.bad{background:var(--red);color:#fff}
+#toast.info{background:var(--purple);color:#fff}
+.qbar{background:rgba(5,7,18,.93);border-top:3px solid var(--trim);padding:0 16px 12px;text-align:center}
+.timer{height:7px;background:rgba(255,255,255,.12);margin:0 -16px 10px;overflow:hidden}
+#timerFill{height:100%;width:100%;background:var(--kelly);transition:background .3s}
+.qtop{display:flex;align-items:center;justify-content:center;gap:12px}
+.qtext{font-size:clamp(1.3rem,3.3vw,2.3rem);font-weight:800;line-height:1.25;color:#fff}
+.qtext strong{color:var(--yellow);font-size:1.08em}
+.opts{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;justify-content:center}
+.chip{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.08);color:#fff;border-radius:10px;padding:5px 12px;font-size:clamp(1rem,2.1vw,1.3rem);font-weight:700;border:3px solid transparent}
+.chip .shape{font-size:1.1em}
+.dpad{display:none;justify-content:center;gap:6px;align-items:center;padding:8px 0 10px;background:rgba(5,7,18,.93)}
+.dpad.show{display:flex}
+.dpad .col{display:flex;flex-direction:column;gap:6px}
+.dpad button{width:64px;height:56px;font-size:1.6rem;border-radius:12px;border:2px solid #2f3a55;background:#1a2036;color:#fff;touch-action:none}
+@media (max-width:640px){
+  #hudTime{font-size:1.6rem;min-width:62px}
+  .meter{order:3;flex-basis:100%;font-size:.95rem}
+  .pill{padding:5px 9px;font-size:.88rem}
+  .hudR{flex-wrap:nowrap;gap:5px}
+  .hudTop{gap:6px;padding:8px}
+  .iconBtn{width:36px;height:34px;font-size:1rem}
+}
+
+/* ---------- Modal ---------- */
+#modal{position:fixed;inset:0;background:rgba(3,10,6,.82);display:none;align-items:center;justify-content:center;padding:16px;z-index:10}
+#modal.show{display:flex}
+.mbox{background:var(--panel);border:3px solid var(--emerald);border-radius:18px;padding:22px;max-width:640px;width:100%;max-height:92vh;overflow:auto;text-align:center}
+.mbox h2{margin:4px 0 10px;font-size:2rem;color:var(--celery)}
+.stats{display:flex;justify-content:center;gap:12px;flex-wrap:wrap;margin:10px 0}
+.stat{background:var(--panel2);border-radius:12px;padding:10px 16px;min-width:110px}
+.stat b{display:block;font-size:1.6rem;color:var(--yellow)}
+.missed{text-align:left;margin-top:12px}
+.missed h3{font-size:1.1rem;margin:8px 0}
+.missed .m{background:var(--panel2);border-radius:10px;padding:8px 12px;margin:6px 0;line-height:1.4}
+.missed .m .ans{color:var(--celery);font-weight:700}
+.mbtns{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:16px}
+.mbtns button{padding:14px 22px;font-size:1.15rem;font-weight:700;border-radius:12px;border:0;background:var(--kelly);color:#04170c}
+.mbtns button.alt{background:var(--panel2);color:var(--text);border:2px solid #2f5440}
+</style>
+</head>
+<body>
+
+<!-- ================= TITLE ================= -->
+<div id="title" class="screen active">
+  <div class="titleWrap">
+    <h1>🌀 Math Maze Chase</h1>
+    <p class="sub">Adding &amp; subtracting (MathSpace 2.01–2.04) · Answer to escape. Earn the portals.</p>
+    <div class="how">
+      🎯 Run into the room with the <b>right answer</b>.<br>
+      😱 A right answer makes the chasers <b>scared</b> for a few seconds. Tag them for bonus points!<br>
+      ⚡ Get <b id="howNeed">4</b> right to <b>open the portals</b> <b id="howTime">for the rest of the round</b>. (Chasers can use them too!)<br>
+      ⏳ Don't wait too long. The chasers get <b>faster</b> the longer you take.
+    </div>
+    <div class="label">Pick your runner</div>
+    <div class="pickRow" id="playerPick"></div>
+    <button class="big" id="startBtn">▶ Start</button>
+    <div class="warn" id="startWarn" hidden>Pick at least one lesson in Teacher Tools.</div>
+    <button class="ghostBtn" id="teacherBtn">⚙ Teacher Tools</button>
+    <div id="teacherPanel" hidden></div>
+  </div>
+</div>
+
+<!-- ================= GAME ================= -->
+<div id="game" class="screen">
+  <div class="stage" id="cwrap">
+    <canvas id="cv"></canvas>
+    <div class="hudTop" id="hudTop">
+      <div id="hudTime">0:30</div>
+      <div class="meter" id="meter"></div>
+      <div class="hudR">
+        <span class="pill" id="hudRound">Round 1/3</span>
+        <span class="pill" id="hudHearts">❤️❤️❤️</span>
+        <span class="pill" id="hudScore">⭐ 0</span>
+        <button class="iconBtn" id="soundBtn" title="Sound on/off">🔊</button>
+        <button class="iconBtn" id="pauseBtn" title="Pause (P)">⏸</button>
+      </div>
+    </div>
+    <div id="qintro">
+      <div class="qiLabel" id="qiLabel"></div>
+      <div class="qiText" id="qiText"></div>
+      <div class="qiGrid" id="qiGrid"></div>
+      <div class="qiGo" id="qiGo">Press an arrow key (or tap) to start ▶</div>
+    </div>
+    <div id="toast"></div>
+  </div>
+  <div class="qbar">
+    <div class="timer"><div id="timerFill"></div></div>
+    <div class="qtop">
+      <div class="qtext" id="qText"></div>
+      <button class="iconBtn" id="speakBtn" title="Read the question aloud">🗣️</button>
+    </div>
+    <div class="opts" id="opts"></div>
+  </div>
+  <div class="dpad" id="dpad">
+    <button data-d="-1,0" aria-label="Left">◀</button>
+    <div class="col">
+      <button data-d="0,-1" aria-label="Up">▲</button>
+      <button data-d="0,1" aria-label="Down">▼</button>
+    </div>
+    <button data-d="1,0" aria-label="Right">▶</button>
+  </div>
+</div>
+
+<div id="modal"><div class="mbox" id="mbox"></div></div>
+
+<script>
+(() => {
+'use strict';
+
+/* =====================================================================
+   CONTENT — MathSpace Common Core 4, Chapter 2 (lessons 2.01–2.04)
+   plus review topics from Number Defense (Chapter 1 + 2).
+   Each topic has a list of question generators. Every generator returns
+   { q, a, opts } (and optionally v: {a, b, op} to show the problem stacked
+   in columns on the question screen). Text wrapped in *stars* shows in
+   bold/yellow. Edit the generators below to change what students practice.
+   ===================================================================== */
+const R = {
+  pick: a => a[Math.floor(Math.random() * a.length)],
+  shuffle: a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; },
+  sample: (a, n, ex = []) => R.shuffle(a.filter(x => !ex.includes(x))).slice(0, n)
+};
+function item(q, a, d) {
+  a = String(a); const opts = [a];
+  for (let x of d) { x = String(x); if (x && x !== a && !opts.includes(x) && opts.length < 4) opts.push(x); }
+  return { q, a, opts: R.shuffle(opts) };
+}
+const ri = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
+const fmt = n => Number(n).toLocaleString('en-US');
+const digs = n => String(n).split('').reverse().map(Number);          // [ones, tens, hundreds, ...]
+const fromDigs = d => +d.slice().reverse().join('');
+const PLACES = ['ones', 'tens', 'hundreds', 'thousands', 'ten thousands', 'hundred thousands', 'millions'];
+const PLACE_NAME = { 10: 'ten', 100: 'hundred', 1000: 'thousand', 10000: 'ten thousand' };
+const PRIMES = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97];
+const sym = op => op === '+' ? '+' : '−';
+const expr = (a, b, op) => `${fmt(a)} ${sym(op)} ${fmt(b)}`;
+
+// Number size from Teacher Tools: 2, 3, 4 digits, or a mix
+function pickSize() { const s = S.size; if (s === 'mix') return R.pick([2, 3, 3, 4, 4]); return +s || 3; }
+
+function needsRegroup(a, b, op) {
+  const A = digs(a), B = digs(b), n = Math.max(A.length, B.length);
+  for (let i = 0; i < n; i++) { const x = A[i] || 0, y = B[i] || 0; if (op === '+' ? x + y >= 10 : x < y) return true; }
+  return false;
+}
+// two numbers of `size` digits that do (want = true) or don't need regrouping
+function opPair(size, op, want) {
+  let a, b;
+  for (let t = 0; t < 800; t++) {
+    a = ri(10 ** (size - 1), 10 ** size - 1);
+    b = Math.random() < .75 || size < 3 ? ri(10 ** (size - 1), 10 ** size - 1) : ri(10 ** (size - 2), 10 ** (size - 1) - 1);
+    if (op === '-' && b > a) [a, b] = [b, a];
+    if (op === '-' && a === b) continue;
+    if (needsRegroup(a, b, op) === want) return [a, b];
+  }
+  return op === '+' ? (want ? [58, 37] : [41, 56]) : (want ? [52, 27] : [68, 35]);
+}
+// wrong answers built from real mistakes: forgot to carry / took small from big, off by 10, off by 100
+function solveDecoys(a, b, op) {
+  const res = op === '+' ? a + b : a - b;
+  const A = digs(a), B = digs(b), n = Math.max(A.length, B.length), dd = [];
+  for (let i = 0; i < n; i++) dd.push(op === '+' ? ((A[i] || 0) + (B[i] || 0)) % 10 : Math.abs((A[i] || 0) - (B[i] || 0)));
+  const naive = fromDigs(dd), out = [];
+  if (naive !== res && naive > 0) out.push(naive);
+  if (op === '+' && needsRegroup(a, b, op)) { const noCarryAll = +digs(a).map((x, i) => x + (B[i] || 0)).reverse().join(''); if (noCarryAll !== res && noCarryAll < res * 20) out.push(noCarryAll); }
+  R.shuffle([res + 10, res - 10, res + 100, res - 100, res + 1, res - 1].filter(x => x > 0 && (res >= 100 || Math.abs(x - res) < 100))).forEach(x => out.push(x));
+  return [...new Set(out)].filter(x => x !== res).slice(0, 3).map(fmt);
+}
+function solveItem(op, want, size) {
+  size = size || pickSize();
+  const [a, b] = opPair(size, op, want), res = op === '+' ? a + b : a - b;
+  const it = item(`Solve: *${expr(a, b, op)}*`, fmt(res), solveDecoys(a, b, op));
+  it.v = { a, b, op }; return it;
+}
+function regroupItem(op) {
+  const want = Math.random() < .5, [a, b] = opPair(pickSize(), op, want);
+  const it = item(`Do you need to regroup to solve *${expr(a, b, op)}*?`, want ? 'Yes, regroup' : 'No regrouping', [want ? 'No regrouping' : 'Yes, regroup']);
+  it.v = { a, b, op }; return it;
+}
+function whichNeedsItem(op, want) {
+  const size = pickSize(), a = opPair(size, op, want), d = [opPair(size, op, !want), opPair(size, op, !want), opPair(size, op, !want)];
+  return item(`Which problem ${want ? '<u>needs</u> regrouping' : 'needs <u>no</u> regrouping'}?`, expr(a[0], a[1], op), d.map(p => expr(p[0], p[1], op)));
+}
+// "how many hundreds, tens, ones" text for place value blocks
+function blocks(n) {
+  const d = digs(n), parts = [];
+  for (let i = d.length - 1; i >= 0; i--) parts.push(`${d[i]} ${d[i] === 1 ? PLACES[i].replace(/s$/, '') : PLACES[i]}`);
+  return parts.join(', ');
+}
+function digitSwaps(n) {
+  const s = String(n), out = new Set();
+  for (let i = 0; i < s.length - 1; i++) if (s[i] !== s[i + 1] && !(i === 0 && s[1] === '0')) { const a = s.split(''); [a[i], a[i + 1]] = [a[i + 1], a[i]]; out.add(+a.join('')); }
+  [n + 10, n - 10, n + 100, n - 100, n + 1].forEach(x => out.add(x));
+  out.delete(n); return R.shuffle([...out].filter(x => x > 0)).slice(0, 3).map(fmt);
+}
+const concept = list => () => { const [q, a, ...d] = R.pick(list); return item(q, a, d); };
+
+// ---------- Review helpers (same logic as Number Defense) ----------
+function randNum(size, zc = .5) {
+  const [lo, hi] = size <= 3 ? [100, 999] : size === 4 ? [1000, 9999] : [10000, 999999];
+  let n = ri(lo, hi);
+  if (Math.random() < zc) { const s = String(n).split(''); s[ri(1, s.length - 1)] = '0'; if (s.length > 3 && Math.random() < .3) s[ri(1, s.length - 1)] = '0'; n = +s.join(''); }
+  return n;
+}
+const rSize = () => Math.max(3, pickSize());
+const ONES_W = ['', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen', 'eighteen', 'nineteen'];
+const TENS_W = ['', '', 'twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eighty', 'ninety'];
+function w999(n) { const h = Math.floor(n / 100), r = n % 100, out = []; if (h) out.push(ONES_W[h] + ' hundred'); if (r) out.push(r < 20 ? ONES_W[r] : TENS_W[Math.floor(r / 10)] + (r % 10 ? '-' + ONES_W[r % 10] : '')); return out.join(' '); }
+function words(n) { if (!n) return 'zero'; const m = Math.floor(n / 1e6), th = Math.floor(n / 1000) % 1000, r = n % 1000, p = []; if (m) p.push(w999(m) + ' million'); if (th) p.push(w999(th) + ' thousand'); if (r) p.push(w999(r)); return p.join(', '); }
+function expStr(n) { const s = String(n), out = []; for (let i = 0; i < s.length; i++) if (s[i] !== '0') out.push(fmt(+s[i] * 10 ** (s.length - 1 - i))); return out.join(' + '); }
+function numDecoys(n, k = 3) {
+  const s = String(n), c = new Set();
+  [...s].forEach((ch, i) => { if (ch === '0' && i > 0) { c.add(+(s.slice(0, i) + s.slice(i + 1))); const a = s.split(''); [a[i], a[i - 1]] = [a[i - 1], a[i]]; if (a[0] !== '0') c.add(+a.join('')); } });
+  if (n >= 1000 && n % 1000) c.add(+(String(Math.floor(n / 1000) * 1000) + String(n % 1000)));
+  const j = ri(1, s.length - 1); c.add(+(s.slice(0, j) + '0' + s.slice(j)));
+  for (let i = 0; i < s.length - 1; i++) if (s[i] !== s[i + 1] && !(i === 0 && s[1] === '0')) { const a = s.split(''); [a[i], a[i + 1]] = [a[i + 1], a[i]]; c.add(+a.join('')); break; }
+  c.delete(n); const arr = R.shuffle([...c].filter(x => x > 0));
+  let p = 1; while (arr.length < k) { const x = n + p * 10; if (!arr.includes(x)) arr.push(x); p++; }
+  return arr.slice(0, k);
+}
+
+const SUBSTEPS = {
+  '2.01': { code: '2.01', name: 'Addition without regrouping: columns, place value blocks & the number line', gens: [
+    () => solveItem('+', false),
+    () => solveItem('+', false),
+    () => { const a = ri(120, 880), b = ri(11, 39);
+      return item(`On a number line, start at *${fmt(a)}* and jump *${b}* to the right. Where do you land?`, fmt(a + b), [fmt(a - b), fmt(a + b + 10), fmt(a + b - 10)]); },
+    () => { const [a, b] = opPair(3, '+', false);
+      return item(`Place value blocks: *${blocks(a)}* plus *${blocks(b)}*. What is the total?`, fmt(a + b), digitSwaps(a + b)); },
+    () => whichNeedsItem('+', false),
+    concept([
+      ['Another word for the <u>ones</u> place is:', 'units', 'tens', 'digits', 'hundreds'],
+      ['When you add on a number line, which way do you jump?', 'to the right', 'to the left', 'up', 'down'],
+      ['In the standard (vertical) algorithm, which column do you add first?', 'ones', 'tens', 'hundreds', 'thousands'],
+      ['Why is it called the <u>vertical</u> algorithm?', 'the numbers line up in columns down the page', 'you add from left to right', 'you use a number line', 'you only add the ones'],
+      ['When you add on a number line, it is easiest to start with:', 'the bigger number', 'the smaller number', 'zero', 'the ones digit']
+    ])
+  ]},
+  '2.02': { code: '2.02', name: 'Addition with regrouping: partitioning & carrying in columns', gens: [
+    () => solveItem('+', true),
+    () => solveItem('+', true),
+    () => { const h = ri(1, 9) * 100, r = Math.random() < .5 ? ri(1, 9) : ri(11, 99), n = h + r;
+      return Math.random() < .5
+        ? item(`Partition: *${fmt(n)} = ${fmt(h)} + ⬚*`, r, [fmt(n), fmt(h), r < 10 ? r * 10 : (r % 10 || r / 10), r < 10 ? r + 100 : r + 10])
+        : item(`Partition: *${fmt(n)} = ⬚ + ${r}*`, fmt(h), [fmt(n), fmt(h / 100), fmt(h * 10), fmt(h + 100)]); },
+    () => { const h1 = ri(1, 6) * 100, h2 = ri(1, 3) * 100, o1 = ri(2, 9), o2 = ri(10 - o1, 9), sum = h1 + h2 + o1 + o2;
+      return item(`Add the partitions of *${fmt(h1 + o1)} + ${fmt(h2 + o2)}*: *${h1} + ${h2} + ${o1} + ${o2}* = ?`, fmt(sum), [fmt(sum - 10), fmt(h1 + h2 + ((o1 + o2) % 10)), fmt(sum + 100), fmt(sum + 10)]); },
+    () => { const place = R.pick([0, 0, 1, 1, 2]), x = ri(2, 9), y = ri(10 - x, 9), s = x + y, P = PLACES[place];
+      return item(`${P[0].toUpperCase() + P.slice(1)} column: *${x} + ${y} = ${s}*. What do you do?`, `write ${s % 10}, carry 1`, [`write 1, carry ${s % 10}`, `write ${s}, carry 0`, `write ${s % 10}, carry 0`]); },
+    () => regroupItem('+'),
+    () => whichNeedsItem('+', true),
+    concept([
+      ['You can trade <u>10 ones</u> for:', '1 ten', '10 tens', '1 hundred', '100 ones'],
+      ['You can trade <u>10 tens</u> for:', '1 hundred', '1 ten', '10 hundreds', '100 tens'],
+      ['When a column adds up to <u>10 or more</u>, you:', 'regroup to the next place on the left', 'write both digits', 'cross out the 1', 'regroup to the next place on the right'],
+      ['Partitioning a number means you:', 'split it up by place value', 'round it', 'take it away', 'double it']
+    ])
+  ]},
+  '2.03': { code: '2.03', name: 'Subtraction without regrouping: columns, blocks & differences on the number line', gens: [
+    () => solveItem('-', false),
+    () => solveItem('-', false),
+    () => { const k = ri(2, 6), a = ri(140, 990), b = a - k * 10;
+      return Math.random() < .5
+        ? item(`*${fmt(a)}* and *${fmt(b)}* have the same ones digit. On a number line, how many jumps of ten from ${fmt(b)} to ${fmt(a)}?`, k, [k + 1, k - 1, k * 10])
+        : item(`Use jumps of ten on the number line: *${fmt(a)} − ${fmt(b)}* = ?`, k * 10, [k, k * 10 + 10, k * 10 - 10, k * 100]); },
+    () => { const a = ri(150, 990), b = ri(11, 39);
+      return item(`On a number line, start at *${fmt(a)}* and jump *${b}* to the left. Where do you land?`, fmt(a - b), [fmt(a + b), fmt(a - b + 10), fmt(a - b - 10)]); },
+    () => { const [a, b] = opPair(3, '-', false);
+      return item(`Place value blocks: you have *${blocks(a)}*. Take away *${blocks(b)}*. What is left?`, fmt(a - b), digitSwaps(a - b)); },
+    () => whichNeedsItem('-', false),
+    concept([
+      ['When you subtract in columns, which place do you start with?', 'ones', 'tens', 'hundreds', 'the biggest place'],
+      ['When you subtract on a number line, which way do you jump?', 'to the left', 'to the right', 'up', 'down'],
+      ['The answer to a subtraction problem is called the:', 'difference', 'sum', 'total', 'partition'],
+      ['When you subtract down the page, you work from:', 'right to left', 'left to right', 'top to bottom', 'the middle out']
+    ])
+  ]},
+  '2.04': { code: '2.04', name: 'Subtraction with regrouping: trading from the next place, bigger numbers', gens: [
+    () => solveItem('-', true),
+    () => solveItem('-', true),
+    () => { let a, b; do { [a, b] = opPair(Math.max(3, pickSize()), '-', true); } while (!(digs(a)[0] < digs(b)[0] && digs(a)[1] > 0));
+      const x = digs(a)[0], y = digs(b)[0];
+      return item(`In *${expr(a, b, '-')}*, the ones column is *${x} − ${y}*. What do you do?`, 'trade 1 ten for 10 ones', [`switch it to ${y} − ${x}`, 'write a 0', 'trade 1 hundred for 10 ones']); },
+    () => { let a, b; do { [a, b] = opPair(Math.max(3, pickSize()), '-', true); } while (!(digs(a)[0] < digs(b)[0] && digs(a)[1] > 0));
+      const x = digs(a)[0], y = digs(b)[0], t = digs(a)[1];
+      const it = Math.random() < .5
+        ? item(`*${expr(a, b, '-')}*: you trade 1 ten. Now the ones column is *⬚ − ${y}*. What goes in the box?`, x + 10, [x, x + 1, 10, y + 10])
+        : item(`*${expr(a, b, '-')}*: you trade 1 ten to the ones. The top tens digit (*${t}*) becomes:`, t - 1, [t, t + 1, t + 10, 9]);
+      it.v = { a, b, op: '-' }; return it; },
+    () => { const [a, b] = opPair(pickSize(), '-', true), r = a - b;
+      return item(`To check *${expr(a, b, '-')} = ${fmt(r)}*, which addition should you do?`, `${fmt(r)} + ${fmt(b)}`, [`${fmt(a)} + ${fmt(b)}`, `${fmt(r)} + ${fmt(a)}`, `${fmt(b)} − ${fmt(r)}`]); },
+    () => regroupItem('-'),
+    () => whichNeedsItem('-', true),
+    concept([
+      ['If a top digit is <u>smaller</u> than the digit below it, you:', 'regroup from the next place to the left', 'subtract the smaller from the bigger', 'write a 0', 'regroup from the next place to the right'],
+      ['You trade <u>1 thousand</u> into the hundreds. How many hundreds is that?', '10 hundreds', '1 hundred', '100 hundreds', '1,000 hundreds'],
+      ['You trade <u>1 ten</u> into the ones. How many ones do you add?', '10', '1', '100', '9']
+    ])
+  ]},
+
+  // ---------- Review (from Number Defense) ----------
+  'R1': { code: '1.01', name: 'Review: × and ÷ by 10, 100, 1,000', review: true, gens: [
+    () => { const k = R.pick([1, 1, 2, 2, 3]), p = 10 ** k, a = Math.random() < .5 ? ri(2, 99) : ri(100, 999);
+      return Math.random() < .5
+        ? item(`Solve: *${fmt(a)} × ${fmt(p)}*`, fmt(a * p), [fmt(a * p * 10), fmt(a * p * 100), fmt(a * 10 ** Math.max(0, k - 1)) === fmt(a * p) ? fmt(a + p) : fmt(a * 10 ** Math.max(0, k - 1))])
+        : item(`Solve: *${fmt(a * p)} ÷ ${fmt(p)}*`, fmt(a), [fmt(a * 10), a % 10 === 0 ? fmt(a / 10) : fmt(a * 100), fmt(a * p)]); }
+  ]},
+  'R2': { code: '1.02', name: 'Review: read & write numbers', review: true, gens: [
+    () => { const n = randNum(rSize(), .6), d = numDecoys(n);
+      return Math.random() < .65
+        ? item(`Which number is *${words(n)}*?`, fmt(n), d.map(fmt))
+        : item(`Which words match *${fmt(n)}*?`, words(n), d.slice(0, 2).map(words)); }
+  ]},
+  'R3': { code: '1.05', name: 'Review: compare numbers (<, >, =)', review: true, gens: [
+    () => { let a = randNum(rSize(), .35), b; const r = Math.random(), s = String(a).split('');
+      if (r < .12) b = a;
+      else if (r < .22) b = +s.slice(0, -1).join('');
+      else if (r < .62) { const i = ri(0, s.length - 1); let d; do { d = ri(i ? 0 : 1, 9); } while (String(d) === s[i]); s[i] = String(d); b = +s.join(''); }
+      else { let done = false; for (let i = ri(0, s.length - 2); i < s.length - 1; i++) if (s[i] !== s[i + 1] && !(i === 0 && s[1] === '0')) { [s[i], s[i + 1]] = [s[i + 1], s[i]]; done = true; break; } b = done ? +s.join('') : a + ri(1, 9) * 10; }
+      if (Math.random() < .5) [a, b] = [b, a];
+      const sg = a > b ? '> greater than' : a < b ? '< less than' : '= equal to';
+      return item(`Which sign goes between *${fmt(a)}* and *${fmt(b)}*?`, sg, ['< less than', '> greater than', '= equal to']); }
+  ]},
+  'R4': { code: '1.06', name: 'Review: greatest & least', review: true, gens: [
+    () => { const base = randNum(rSize(), .3), set = new Set([base]);
+      for (let t = 0; set.size < 4 && t < 80; t++) { const s = String(base).split('');
+        if (Math.random() < .5) { const i = ri(0, s.length - 2); if (s[i] === s[i + 1] || (i === 0 && s[1] === '0')) continue; [s[i], s[i + 1]] = [s[i + 1], s[i]]; }
+        else { const i = ri(0, s.length - 1); s[i] = String(ri(i ? 0 : 1, 9)); }
+        set.add(+s.join('')); }
+      while (set.size < 4) set.add(base + set.size * 100);
+      const nums = [...set], sorted = nums.slice().sort((x, y) => x - y), g = Math.random() < .5, t = g ? sorted[sorted.length - 1] : sorted[0];
+      return item(`Which number is the *${g ? 'GREATEST' : 'LEAST'}*?`, fmt(t), nums.filter(x => x !== t).map(fmt)); }
+  ]},
+  'R5': { code: '1.08', name: 'Review: expanded form', review: true, gens: [
+    () => { const n = randNum(rSize(), .55), d = numDecoys(n);
+      return Math.random() < .5
+        ? item(`Which number is *${expStr(n)}*?`, fmt(n), d.map(fmt))
+        : item(`Which is the expanded form of *${fmt(n)}*?`, expStr(n), d.slice(0, 3).map(expStr)); }
+  ]},
+  'R6': { code: '1.11', name: 'Review: rounding', review: true, gens: [
+    () => { const sz = rSize(), p = R.pick(sz === 3 ? [10, 100] : [10, 100, 1000]); let n; do { n = randNum(sz, .2); } while (n % p === 0);
+      const lo = Math.floor(n / p) * p, hi = lo + p, up = Math.floor(n / (p / 10)) % 10 >= 5;
+      return item(`Round *${fmt(n)}* to the nearest ${PLACE_NAME[p]}.`, fmt(up ? hi : lo), [fmt(up ? lo : hi), fmt(up ? hi + p : Math.max(p, lo - p))]); }
+  ]},
+  'R7': { code: '1.12', name: 'Review: prime & composite', review: true, gens: [
+    () => { let n; if (Math.random() < .45) n = R.pick(PRIMES); else do { n = Math.random() < .6 ? (ri(4, 99) | 1) : ri(2, 50) * 2; } while (PRIMES.includes(n));
+      return item(`Is *${n}* prime or composite?`, PRIMES.includes(n) ? 'prime' : 'composite', [PRIMES.includes(n) ? 'composite' : 'prime']); }
+  ]},
+  'R8': { code: '2.0x', name: 'Review: mixed add & subtract (Number Defense)', review: true, gens: [
+    () => solveItem(R.pick(['+', '-']), Math.random() < .7),
+    () => regroupItem(R.pick(['+', '-']))
+  ]}
+};
+
+/* ===================================================================== MAZES */
+// # wall   . path   P portal (left/right pair)   S runner start (center); chasers start at far-away spots found automatically
+// Open maps: no dead ends, every hallway loops (default)
+const MAZES_OPEN = [
+ [ '#####################',
+   '#1111...........2222#',
+   '#1111.##.#.#.##.2222#',
+   '#...................#',
+   '#.##.##.##.##.##.##.#',
+   '#.##.##.##.##.##.##.#',
+   '#...................#',
+   'P...##.##.S.##.##...P',
+   '#...................#',
+   '#.##.##.##.##.##.##.#',
+   '#.##.##.##.##.##.##.#',
+   '#...................#',
+   '#3333.##.#.#.##.4444#',
+   '#3333...........4444#',
+   '#####################' ],
+ [ '#####################',
+   '#1111...........2222#',
+   '#1111.###.#.###.2222#',
+   '#...................#',
+   '#.###.###.#.###.###.#',
+   '#.###.###...###.###.#',
+   '#...................#',
+   'P..##.##..S..##.##..P',
+   '#...................#',
+   '#.###.###...###.###.#',
+   '#.###.###.#.###.###.#',
+   '#...................#',
+   '#3333.###.#.###.4444#',
+   '#3333...........4444#',
+   '#####################' ],
+ [ '#####################',
+   '#1111...........2222#',
+   '#1111.#.##.##.#.2222#',
+   '#...................#',
+   '#.#.###.#.#.#.###.#.#',
+   '#.#.###.#...#.###.#.#',
+   '#...................#',
+   'P.##.#.##.S.##.#.##.P',
+   '#...................#',
+   '#.#.###.#...#.###.#.#',
+   '#.#.###.#.#.#.###.#.#',
+   '#...................#',
+   '#3333.#.##.##.#.4444#',
+   '#3333...........4444#',
+   '#####################' ]
+];
+// Twisty maps: more walls, jogs and dead ends (harder)
+const MAZES_TWISTY = [
+ [ '#####################',
+   '#1111...........2222#',
+   '#1111..##.#.##..2222#',
+   '#..###.##...##.###..#',
+   '#...................#',
+   '#.##.###.###.###.##.#',
+   '#....#....#....#....#',
+   'P....#.#..S..#.#....P',
+   '#.##.#....#....#.##.#',
+   '#.##.###.###.###.##.#',
+   '#...................#',
+   '#..###.##...##.###..#',
+   '#3333..##.#.##..4444#',
+   '#3333...........4444#',
+   '#####################' ],
+ [ '#####################',
+   '#1111...........2222#',
+   '#1111..###.###..2222#',
+   '#..###...#.#...###..#',
+   '#.....#.......#.....#',
+   '#.###.#.##.##.#.###.#',
+   '#.#.......#.......#.#',
+   'P...###.#.S.#.###...P',
+   '#.#.......#.......#.#',
+   '#.###.#.##.##.#.###.#',
+   '#.....#.......#.....#',
+   '#..###...#.#...###..#',
+   '#3333..###.###..4444#',
+   '#3333...........4444#',
+   '#####################' ],
+ [ '#####################',
+   '#1111.....#.....2222#',
+   '#1111..##.#.##..2222#',
+   '#..###.##...##.###..#',
+   '#...#...........#...#',
+   '#.#.#.###.#.###.#.#.#',
+   '#.#...#.......#...#.#',
+   'P...#.#.#.S.#.#.#...P',
+   '#.#...#.......#...#.#',
+   '#.#.#.###.#.###.#.#.#',
+   '#...#...........#...#',
+   '#..###.##...##.###..#',
+   '#3333..##.#.##..4444#',
+   '#3333...........4444#',
+   '#####################' ]
+];
+const MAZES = MAZES_OPEN.concat(MAZES_TWISTY);
+// ---------- Maze generator: a real labyrinth with the four answer rooms built in ----------
+// New maze every round. Hallways wind like a true maze, but dead ends are knocked through
+// ("braided") so the runner can't be trapped at the end of a hallway. Room 1 is always in the
+// top-left quarter, 2 top-right, 3 bottom-left, 4 bottom-right (matches the question card),
+// at a random spot inside that quarter, with one or two doorways.
+function genMaze(W) {
+  W = W || 21; const H = 15, rnd = n => Math.floor(Math.random() * n), pick = a => a[rnd(a.length)];
+  const mid = Math.floor(W / 2), cx0 = mid % 2 ? mid : mid - 1; // a lattice column at/next to the middle
+  for (let attempt = 0; attempt < 80; attempt++) {
+    const g = Array.from({ length: H }, () => Array(W).fill('#'));
+    const rooms = [
+      { id: '1', x0: pick([1, 3]), y0: pick([1, 3]) }, { id: '2', x0: pick([W - 8, W - 6]), y0: pick([1, 3]) },
+      { id: '3', x0: pick([1, 3]), y0: pick([9, 11]) }, { id: '4', x0: pick([W - 8, W - 6]), y0: pick([9, 11]) }
+    ];
+    const inRoom = (x, y) => rooms.find(r => x >= r.x0 && x <= r.x0 + 4 && y >= r.y0 && y <= r.y0 + 2);
+    const lat = (x, y) => x >= 1 && x <= W - 2 && y >= 1 && y <= H - 2 && x % 2 === 1 && y % 2 === 1 && !inRoom(x, y);
+    const D = [[2, 0], [-2, 0], [0, 2], [0, -2]];
+    const seen = new Set(), key = (x, y) => x + ',' + y, stack = [[cx0, 7]];
+    g[7][cx0] = '.'; seen.add(key(cx0, 7));
+    while (stack.length) {
+      const [x, y] = stack[stack.length - 1];
+      const nb = D.map(([dx, dy]) => [x + dx, y + dy, dx, dy]).filter(([nx, ny]) => lat(nx, ny) && !seen.has(key(nx, ny)));
+      if (!nb.length) { stack.pop(); continue; }
+      const [nx, ny, dx, dy] = pick(nb);
+      g[y + dy / 2][x + dx / 2] = '.'; g[ny][nx] = '.'; seen.add(key(nx, ny)); stack.push([nx, ny]);
+    }
+    let total = 0; for (let y = 1; y < H; y += 2) for (let x = 1; x < W; x += 2) if (lat(x, y)) total++;
+    if (seen.size !== total) continue;
+    const deg = (x, y) => D.filter(([dx, dy]) => g[y + dy / 2] && g[y + dy / 2][x + dx / 2] === '.').length;
+    for (let y = 1; y < H; y += 2) for (let x = 1; x < W; x += 2) {
+      if (!lat(x, y) || deg(x, y) !== 1) continue;
+      const opts = D.filter(([dx, dy]) => lat(x + dx, y + dy) && g[y + dy / 2][x + dx / 2] === '#');
+      if (!opts.length) continue;
+      const best = opts.filter(([dx, dy]) => deg(x + dx, y + dy) === 1);
+      const [dx, dy] = pick(best.length ? best : opts); g[y + dy / 2][x + dx / 2] = '.';
+    }
+    for (let k = 0; k < Math.round(W / 4); k++) {
+      const x = 1 + 2 * rnd((W - 1) / 2), y = 1 + 2 * rnd(7), [dx, dy] = pick(D);
+      if (lat(x, y) && lat(x + dx, y + dy)) g[y + dy / 2][x + dx / 2] = '.';
+    }
+    rooms.forEach(r => {
+      for (let y = r.y0; y <= r.y0 + 2; y++) for (let x = r.x0; x <= r.x0 + 4; x++) g[y][x] = r.id;
+      const doors = [];
+      [r.x0, r.x0 + 2, r.x0 + 4].forEach(x => { if (lat(x, r.y0 - 2)) doors.push(['top', x, r.y0 - 1]); if (lat(x, r.y0 + 4)) doors.push(['bot', x, r.y0 + 3]); });
+      [r.y0, r.y0 + 2].forEach(y => { if (lat(r.x0 - 2, y)) doors.push(['left', r.x0 - 1, y]); if (lat(r.x0 + 6, y)) doors.push(['right', r.x0 + 5, y]); });
+      const a = pick(doors), b = pick(doors.filter(d => d[0] !== a[0]).concat([null]));
+      [a, b].forEach(d => { if (d) g[d[2]][d[1]] = '.'; });
+    });
+    g[7][mid] = 'S'; if (g[7][mid - 1] === '#') g[7][mid - 1] = '.'; if (g[7][mid + 1] === '#') g[7][mid + 1] = '.';
+    for (let y = 1; y < H - 1; y++) for (let x = 1; x < W - 1; x++) {
+      if (g[y][x] !== '.' && g[y][x] !== 'S') continue;
+      const n = [[1, 0], [-1, 0], [0, 1], [0, -1]].filter(([dx, dy]) => g[y + dy][x + dx] !== '#').length;
+      if (n >= 2) continue;
+      const opts = D.filter(([dx, dy]) => { const wx = x + dx / 2, wy = y + dy / 2, tx = x + dx, ty = y + dy;
+        return Number.isInteger(wx) && Number.isInteger(wy) && g[wy][wx] === '#' && tx >= 1 && tx <= W - 2 && ty >= 1 && ty <= H - 2 && g[ty][tx] !== '#'; });
+      if (opts.length) { const [dx, dy] = pick(opts); g[y + dy / 2][x + dx / 2] = '.'; }
+      else { const o2 = [[1, 0], [-1, 0], [0, 1], [0, -1]].filter(([dx, dy]) => g[y + dy][x + dx] === '#' && x + 2 * dx >= 1 && x + 2 * dx <= W - 2 && y + 2 * dy >= 1 && y + 2 * dy <= H - 2 && g[y + 2 * dy][x + 2 * dx] !== '#');
+        if (o2.length) { const [dx, dy] = pick(o2); g[y + dy][x + dx] = '.'; } }
+    }
+    const open = []; g.forEach((row, y) => row.forEach((c, x) => { if (c !== '#') open.push(key(x, y)); }));
+    const vis = new Set([key(mid, 7)]), q = [[mid, 7]];
+    while (q.length) { const [x, y] = q.pop(); for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const nx = x + dx, ny = y + dy; if (g[ny] && g[ny][nx] && g[ny][nx] !== '#' && !vis.has(key(nx, ny))) { vis.add(key(nx, ny)); q.push([nx, ny]); } } }
+    if (vis.size !== open.length) continue;
+    return g.map(r => r.join(''));
+  }
+  return MAZES_OPEN[0];
+}
+// widest maze that fits the screen without shrinking the squares (21 to 29 columns, always odd)
+function bestWidth() {
+  const w = $('#cwrap'); if (!w || !w.clientHeight) return 21;
+  const top = $('#hudTop').offsetHeight + 6, tileH = Math.floor((w.clientHeight - top - 8) / 15);
+  let cols = Math.floor((w.clientWidth - 16) / Math.max(tileH, 1)); if (cols % 2 === 0) cols--;
+  return Math.max(21, Math.min(29, cols));
+}
+const mazeFor = round => {
+  const t = S.mapType;
+  if (t === 'open') return MAZES_OPEN[(round - 1) % MAZES_OPEN.length];
+  if (t === 'twisty') return MAZES_TWISTY[(round - 1) % MAZES_TWISTY.length];
+  if (t === 'mix') { const k = (round - 1) % 3; return k === 0 ? genMaze(bestWidth()) : k === 1 ? MAZES_OPEN[Math.floor((round - 1) / 3) % 3] : MAZES_TWISTY[Math.floor((round - 1) / 3) % 3]; }
+  return genMaze(bestWidth());
+};
+// 1-4 = answer rooms (runner only; one doorway each). Rooms sit in the same corners in every maze.
+const isRoom = c => c >= '1' && c <= '4';
+// escape walls: the runner can pass only in the arrow's direction; chasers never can
+const ONEWAY = { '>': [1, 0], '<': [-1, 0], 'v': [0, 1], '^': [0, -1] };
+const isOneWay = c => c in ONEWAY;
+
+/* ===================================================================== SETTINGS */
+const THEMES = {
+  dino:  { name: 'Dinosaurs', icon: '🦖', sprites: ['🦖', '🦕', '🦖', '🦕', '🦖'], one: 'A dinosaur',
+    pal: { sky: ['#1c0703', '#6b220b', '#d4642a'], floor: '#4a4250', seam: 'rgba(255,255,255,.05)', edge: '#d9cbb6', trim: '#f2a33a',
+      glow: '#ffb35c', orb: ['#fff1b8', '#ffb347', '#ff6a2b'], orbR: 0.17, star: '#ffd9a0', starN: 35, hills: '#160603', sparkle: '#ffcf8a' } },
+  alien: { name: 'Aliens',    icon: '👾', sprites: ['👾', '👽', '👾', '👽', '👾'], one: 'An alien',
+    pal: { sky: ['#12052b', '#3a1170', '#6c1f9c'], floor: '#3e4766', seam: 'rgba(255,255,255,.05)', edge: '#c3c9dc', trim: '#e9b84a',
+      glow: '#9be7ff', orb: ['#ffd9a0', '#ff9a3d', '#e9572a'], orbR: 0.13, star: '#c9f6ff', starN: 90, sparkle: '#b9fbff' } },
+  ghost: { name: 'Ghosts',    icon: '👻', sprites: ['👻', '👻', '👻', '👻', '👻'], one: 'A ghost',
+    pal: { sky: ['#03070f', '#0c1a30', '#1b3354'], floor: '#373e4f', seam: 'rgba(255,255,255,.05)', edge: '#aeb6c8', trim: '#6fe3c4',
+      glow: '#b7fff0', orb: ['#fffef0', '#f1ecc4', '#c9c290'], orbR: 0.12, star: '#e6fff8', starN: 70, fog: true, crater: true, sparkle: '#d8fff6' } }
+};
+const DIFF = {
+  easy:   { name: 'Easy',   count: 2, speed: 0.55, smart: 0.45, scared: 7, desc: '2 slow chasers that wander a lot' },
+  medium: { name: 'Medium', count: 3, speed: 0.66, smart: 0.70, scared: 6, desc: '3 chasers that follow you most of the time' },
+  hard:   { name: 'Hard',   count: 4, speed: 0.78, smart: 0.88, scared: 5, desc: '4 fast chasers that hunt you down' }
+};
+const PLAYERS = ['😎', '🐸', '🤖', '🐱', '🦊', '🐵'];
+const RUN_SPEEDS = { slow: 2.6, medium: 3.3, fast: 4.2 };
+const runSpeed = () => RUN_SPEEDS[S.runSpeed] || RUN_SPEEDS.medium;
+const SET_KEY = 'mathMazeChase_settings_v1';
+const DEFAULTS = { step: 'lessons', size: 'mix', vertical: true,
+  subs: { '2.01': true, '2.02': true, '2.03': true, '2.04': true, 'R1': true, 'R2': true, 'R3': true, 'R4': true, 'R5': true, 'R6': true, 'R7': true, 'R8': true },
+  diff: 'medium', theme: 'dino', player: '😎', qPerRound: 8, rounds: 3, timer: 30, unlockAt: 4, portalStay: 'round',
+  hearts: 3, runSpeed: 'medium', wrongDrops: true, readAloud: false, sound: true, dpad: false, mapType: 'maze', boostPads: true, padCount: 7, escapeWalls: 6, portalPairs: 2 };
+function loadSettings() {
+  try { const s = JSON.parse(localStorage.getItem(SET_KEY) || 'null'); if (s) return { ...DEFAULTS, ...s, subs: { ...DEFAULTS.subs, ...(s.subs || {}) } }; } catch (e) {}
+  return JSON.parse(JSON.stringify(DEFAULTS));
+}
+function saveSettings() { try { localStorage.setItem(SET_KEY, JSON.stringify(S)); } catch (e) {} }
+let S = loadSettings();
+const inGroup = k => S.step === 'both' || (S.step === 'review') === !!SUBSTEPS[k].review;
+function activeSubs() { return Object.keys(SUBSTEPS).filter(k => S.subs[k] && inGroup(k)); }
+
+/* ===================================================================== HELPERS */
+const $ = s => document.querySelector(s);
+const esc = t => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+// allow the small set of tags used in questions (<u>), escape everything else, *word* -> bold
+const fmtQ = t => esc(t).replace(/&lt;(\/?)u&gt;/g, '<$1u>').replace(/\*(.+?)\*/g, '<strong>$1</strong>');
+const plainQ = t => t.replace(/<\/?u>/g, '').replace(/\*/g, '');
+const speakable = t => plainQ(t).replace(/ − /g, ' minus ').replace(/−/g, ' minus ').replace(/ \+ /g, ' plus ').replace(/×/g, ' times ').replace(/÷/g, ' divided by ').replace(/⬚/g, ' blank ').replace(/ = \?/g, ' equals what').replace(/ = /g, ' equals ');
+function speak(t) {
+  try { if (!window.speechSynthesis) return; speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(speakable(t)); u.rate = 0.9; speechSynthesis.speak(u); } catch (e) {}
+}
+function showScreen(id) { document.querySelectorAll('.screen').forEach(s => s.classList.toggle('active', s.id === id)); }
+
+/* ===================================================================== SOUND */
+let AC = null;
+function tone(f, d, type = 'square', v = 0.06, when = 0) {
+  if (!S.sound) return;
+  try {
+    AC = AC || new (window.AudioContext || window.webkitAudioContext)();
+    const o = AC.createOscillator(), g = AC.createGain(); const t0 = AC.currentTime + when;
+    o.type = type; o.frequency.setValueAtTime(f, t0); g.gain.setValueAtTime(v, t0); g.gain.exponentialRampToValueAtTime(0.0001, t0 + d);
+    o.connect(g); g.connect(AC.destination); o.start(t0); o.stop(t0 + d);
+  } catch (e) {}
+}
+const SFX = {
+  boost: () => { [500, 700, 950, 1250].forEach((f, i) => tone(f, .09, 'sawtooth', .05, i * .05)); },
+  right: () => { tone(660, .1); tone(880, .12, 'square', .06, .1); tone(1175, .18, 'square', .06, .2); },
+  wrong: () => { tone(220, .25, 'sawtooth', .05); tone(160, .3, 'sawtooth', .05, .2); },
+  caught: () => { tone(400, .1, 'triangle', .08); tone(250, .15, 'triangle', .08, .1); tone(120, .3, 'triangle', .08, .25); },
+  eat: () => { tone(500, .06); tone(900, .1, 'square', .06, .06); },
+  portal: () => { tone(300, .12, 'sine', .08); tone(600, .15, 'sine', .08, .08); },
+  open: () => { [400, 500, 600, 800].forEach((f, i) => tone(f, .15, 'sine', .07, i * .09)); },
+  tick: () => tone(1000, .04, 'square', .03)
+};
+
+/* ===================================================================== TITLE / TEACHER UI */
+function seg(options, current, onPick) {
+  const wrap = document.createElement('div'); wrap.className = 'seg';
+  options.forEach(([val, label]) => {
+    const b = document.createElement('button'); b.type = 'button'; b.innerHTML = label; if (val === current) b.classList.add('on');
+    b.onclick = () => { wrap.querySelectorAll('button').forEach(x => x.classList.remove('on')); b.classList.add('on'); onPick(val); };
+    wrap.appendChild(b);
+  });
+  return wrap;
+}
+function section(panel, title, el, hint) {
+  const h = document.createElement('h2'); h.textContent = title; panel.appendChild(h); panel.appendChild(el);
+  if (hint) { const p = document.createElement('p'); p.className = 'hint'; p.innerHTML = hint; panel.appendChild(p); }
+}
+function toggleRow(label, key) {
+  const l = document.createElement('label'); l.className = 'toggle';
+  const i = document.createElement('input'); i.type = 'checkbox'; i.checked = !!S[key];
+  i.onchange = () => { S[key] = i.checked; saveSettings(); refreshTitle(); };
+  l.appendChild(i); l.appendChild(document.createTextNode(label)); return l;
+}
+function buildTeacherPanel() {
+  const P = $('#teacherPanel'); P.innerHTML = '';
+  section(P, 'Content', seg([['lessons', 'Lessons 2.01–2.04'], ['review', 'Review (Number Defense)'], ['both', 'Lessons + Review']], S.step, v => { S.step = v; saveSettings(); buildTeacherPanel(); refreshTitle(); }));
+  const subs = document.createElement('div'); subs.className = 'subs';
+  Object.keys(SUBSTEPS).filter(inGroup).forEach(k => {
+    const l = document.createElement('label'); const i = document.createElement('input'); i.type = 'checkbox'; i.checked = !!S.subs[k];
+    i.onchange = () => { S.subs[k] = i.checked; saveSettings(); refreshTitle(); };
+    l.appendChild(i); const t = document.createElement('span'); t.innerHTML = `<b>${SUBSTEPS[k].code}</b> ${esc(SUBSTEPS[k].name)}`; l.appendChild(t); subs.appendChild(l);
+  });
+  section(P, 'Lessons', subs, 'Questions are mixed evenly across the lessons you check.');
+  section(P, 'Number size', seg([['2', '2-digit'], ['3', '3-digit'], ['4', '4-digit'], ['mix', 'Mix']], String(S.size), v => { S.size = v; saveSettings(); }),
+    'For the add &amp; subtract problems. <b>Mix</b> uses mostly 3- and 4-digit numbers with some 2-digit. Review topics use at least 3 digits.');
+  section(P, 'Chasers', seg(Object.entries(THEMES).map(([k, t]) => [k, `${t.icon} ${t.name}`]), S.theme, v => { S.theme = v; saveSettings(); }));
+  section(P, 'Maps', seg([['maze', 'Maze'], ['open', 'Open'], ['twisty', 'Twisty'], ['mix', 'Mix']], S.mapType, v => { S.mapType = v; saveSettings(); }),
+    '<b>Maze</b>: a real maze with rooms, new every round, no dead ends. <b>Open</b>: wide grid, hardest to get cornered. <b>Twisty</b>: fixed mazes with more walls. <b>Mix</b>: rotates through all three.');
+  section(P, 'Speed boost pads', seg([[0, 'Off'], [3, '3'], [5, '5'], [7, '7']], S.boostPads ? S.padCount : 0, v => { S.boostPads = v > 0; if (v) S.padCount = v; saveSettings(); }),
+    'How many pads are on the map. Pads stay in the same spots all round and can be used again and again (they recharge for 3 seconds after each use). Running over a pad = faster for 3 seconds.');
+  section(P, 'Color portal pairs', seg([[0, 'Off'], [1, '1'], [2, '2'], [3, '3']], S.portalPairs, v => { S.portalPairs = v; saveSettings(); }),
+    'Blue / red / green portals inside the maze (runner only). The purple wrap-around portals on the edges are always there.');
+  section(P, 'Escape walls', seg([[0, 'Off'], [3, '3'], [6, '6'], [9, '9']], S.escapeWalls, v => { S.escapeWalls = v; saveSettings(); }),
+    'Orange arrow walls the runner can go through one way. Chasers can\'t go through them.');
+  section(P, 'Runner speed', seg([['slow', 'Slow'], ['medium', 'Medium'], ['fast', 'Fast']], S.runSpeed, v => { S.runSpeed = v; saveSettings(); }),
+    'Chasers are always slower than the runner, and their speed scales with this setting.');
+  section(P, 'Chaser difficulty', seg(Object.entries(DIFF).map(([k, d]) => [k, d.name]), S.diff, v => { S.diff = v; saveSettings(); $('#diffHint').textContent = DIFF[v].desc + '. Each new round adds a little speed, and an extra chaser every other round.'; }),
+    `<span id="diffHint">${DIFF[S.diff].desc}. Each new round adds a little speed, and an extra chaser every other round.</span>`);
+  section(P, 'Questions per round', seg([6, 8, 10, 12].map(n => [n, String(n)]), S.qPerRound, v => { S.qPerRound = v; saveSettings(); }));
+  section(P, 'Number of rounds', seg([2, 3, 4, 5].map(n => [n, String(n)]), S.rounds, v => { S.rounds = v; saveSettings(); }));
+  section(P, 'Time per question', seg([20, 30, 45, 60].map(n => [n, n + ' sec']), S.timer, v => { S.timer = v; saveSettings(); }),
+    'If time runs out, it counts as a miss. Chasers speed up as the timer runs down.');
+  section(P, 'Right answers needed to open portals', seg([2, 3, 4, 5, 6].map(n => [n, String(n)]), S.unlockAt, v => { S.unlockAt = v; saveSettings(); refreshTitle(); }), 'Counts right answers in the current round.');
+  section(P, 'How long portals stay open', seg([['round', 'Rest of the round'], [30, '30 sec'], [45, '45 sec']], S.portalStay, v => { S.portalStay = v; saveSettings(); refreshTitle(); }),
+    'Chasers can use open portals too. Portals lock again at the start of each new round.');
+  section(P, 'Hearts', seg([3, 4, 5].map(n => [n, String(n)]), S.hearts, v => { S.hearts = v; saveSettings(); }), 'One heart comes back at the start of each new round.');
+  const opts = document.createElement('div');
+  opts.appendChild(toggleRow('A wrong answer takes away one ⚡ of portal power', 'wrongDrops'));
+  opts.appendChild(toggleRow('Show add & subtract problems stacked in columns on the question screen', 'vertical'));
+  opts.appendChild(toggleRow('Read each question aloud automatically', 'readAloud'));
+  opts.appendChild(toggleRow('Sound effects', 'sound'));
+  opts.appendChild(toggleRow('Show on-screen arrow buttons on touch screens (off = swipe on the board)', 'dpad'));
+  section(P, 'Options', opts);
+  const pv = document.createElement('div');
+  const pb = document.createElement('button'); pb.type = 'button'; pb.className = 'ghostBtn'; pb.textContent = '👀 Preview sample questions';
+  const out = document.createElement('div'); out.id = 'preview';
+  pb.onclick = () => {
+    const subsA = activeSubs(); if (!subsA.length) { out.textContent = 'No lessons selected.'; return; }
+    out.innerHTML = buildQuestions(8).map(q => `<div class="pq"><b>${SUBSTEPS[q.sub].code}</b> · ${fmtQ(q.q)}<br>${q.opts.map(o => o === q.a ? `<span class="pa">✔ ${esc(o)}</span>` : esc(o)).join(' &nbsp;·&nbsp; ')}</div>`).join('');
+  };
+  pv.appendChild(pb); pv.appendChild(out); section(P, 'Check the content', pv);
+}
+function refreshTitle() {
+  $('#howNeed').textContent = S.unlockAt; $('#howTime').textContent = S.portalStay === 'round' ? 'for the rest of the round' : `for ${S.portalStay} seconds`;
+  const ok = activeSubs().length > 0; $('#startBtn').disabled = !ok; $('#startWarn').hidden = ok;
+  $('#soundBtn').textContent = S.sound ? '🔊' : '🔇';
+}
+function buildPlayerPick() {
+  const row = $('#playerPick'); row.innerHTML = '';
+  PLAYERS.forEach(p => {
+    const b = document.createElement('button'); b.className = 'pick' + (p === S.player ? ' on' : ''); b.textContent = p; b.type = 'button';
+    b.onclick = () => { S.player = p; saveSettings(); buildPlayerPick(); }; row.appendChild(b);
+  });
+}
+// ---- Teacher Tools code lock ----
+// The code is stored only as a hash so it can't be read from the page source.
+// To change it: run codeHash('NEWCODE') in the browser console and paste the result into TEACHER_CODE_HASH.
+const TEACHER_CODE_HASH = 'yhvvz9';
+const codeHash = t => { let x = 5381; for (const c of String(t)) x = (((x * 33) >>>0) ^ c.charCodeAt(0)) >>> 0; return x.toString(36); };
+window.codeHash = codeHash;
+let teacherUnlocked = false;
+function openTeacher() { const P = $('#teacherPanel'); P.hidden = false; buildTeacherPanel(); setTimeout(() => P.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60); }
+function lockTeacher() { teacherUnlocked = false; $('#teacherPanel').hidden = true; }
+function askCode(msg) {
+  $('#mbox').innerHTML = `<h2>🔒 Teacher Tools</h2><p>${msg || 'Enter the teacher code.'}</p>
+    <input id="pinIn" type="text" name="pc-${Date.now()}" inputmode="numeric" pattern="[0-9]*" maxlength="8" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" data-lpignore="true" data-1p-ignore data-form-type="other" readonly style="-webkit-text-security:disc;font:inherit;font-size:1.6rem;text-align:center;width:220px;padding:10px;border-radius:12px;border:2px solid #2f5440;background:#0b1a12;color:#fff;letter-spacing:6px">
+    <button type="button" id="pinEye" title="Show / hide the numbers" style="margin-left:8px;font-size:1.4rem;background:none;border:0;color:#fff;cursor:pointer">👁</button>
+    <div class="mbtns"><button id="pinOk">Unlock</button><button class="alt" id="pinCancel">Cancel</button></div>`;
+  $('#modal').classList.add('show');
+  // readonly until focused + not a password field, so browser password managers can't fill it in
+  const inp = $('#pinIn'); inp.value = ''; setTimeout(() => { inp.removeAttribute('readonly'); inp.value = ''; inp.focus(); }, 60);
+  const tryIt = () => {
+    if (!inp.value.replace(/\D/g, '')) { askCode('Type the code first (numbers only).'); return; }
+    if (codeHash(inp.value.replace(/\D/g, '')) === TEACHER_CODE_HASH) { teacherUnlocked = true; closeModal(); openTeacher(); }
+    else { const n = inp.value.replace(/\D/g, '').length; askCode(`<span style="color:#ff8a8a;font-weight:700">That code didn't work.</span> The box had ${n} number${n === 1 ? '' : 's'} in it. Tap 👁 to see what's in the box, then try again.`); }
+  };
+  $('#pinOk').onclick = tryIt; $('#pinCancel').onclick = closeModal;
+  $('#pinEye').onclick = () => { const shown = inp.style.webkitTextSecurity === 'none'; inp.style.webkitTextSecurity = shown ? 'disc' : 'none'; inp.focus(); };
+  inp.addEventListener('keydown', ev => {
+    if (ev.key === 'Enter' || ev.code === 'NumpadEnter') { ev.preventDefault(); tryIt(); return; }
+    if (ev.key === 'Escape') { closeModal(); return; }
+    // number-pad keys type digits even when Num Lock is off
+    const m = /^Numpad(\d)$/.exec(ev.code || '');
+    if (m && !/^\d$/.test(ev.key)) { ev.preventDefault(); inp.value += m[1]; }
+  });
+}
+$('#teacherBtn').onclick = () => {
+  const P = $('#teacherPanel');
+  if (!P.hidden) { lockTeacher(); return; }
+  if (teacherUnlocked) openTeacher(); else askCode();
+};
+$('#startBtn').onclick = () => { lockTeacher(); try { AC = AC || new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} newGame(); };
+
+/* ===================================================================== QUESTIONS */
+function buildQuestions(n) {
+  const subs = R.shuffle(activeSubs()); const used = new Set(G && G.usedQ ? G.usedQ : []); const out = [];
+  for (let i = 0; i < n; i++) {
+    const sub = subs[i % subs.length]; let it = null;
+    for (let t = 0; t < 12; t++) {
+      const cand = R.pick(SUBSTEPS[sub].gens)();
+      if (cand.opts.length < 2) continue;
+      const key = cand.q + '|' + cand.a; it = cand;
+      if (!used.has(key)) { used.add(key); break; }
+    }
+    it.sub = sub; out.push(it);
+  }
+  if (G) G.usedQ = used;
+  return R.shuffle(out);
+}
+
+/* ===================================================================== GAME STATE */
+const cv = $('#cv'), ctx = cv.getContext('2d');
+const COLORS = [
+  { c: '#E4572E', shape: '●', name: 'circle' }, { c: '#3A8DDE', shape: '▲', name: 'triangle' },
+  { c: '#F2C14E', shape: '■', name: 'square' }, { c: '#A66CF0', shape: '◆', name: 'diamond' }
+];
+let G = null, tile = 32, dpr = 1, last = 0, toastTimer = 0;
+
+function cell(x, y) { if (y < 0 || y >= G.rows || x < 0 || x >= G.cols) return '#'; return G.grid[y][x]; }
+const passE = (x, y) => { const c = cell(x, y); return c !== '#' && !isOneWay(c) && (c !== 'P' || G.portalOpen > 0) && !isRoom(c); };
+const passP = (x, y, d) => { const c = cell(x, y); if (isOneWay(c)) return !!d && ONEWAY[c][0] === d.dx && ONEWAY[c][1] === d.dy; return c !== '#' && (c !== 'P' || G.portalOpen > 0); };
+function mkEnt(p) { return { x: p.x, y: p.y, fx: p.x, fy: p.y, tx: p.x, ty: p.y, dx: 0, dy: 0 }; }
+
+function newGame() {
+  G = { round: 1, score: 0, hearts: S.hearts, streak: 0, bestStreak: 0, totalRight: 0, totalAsked: 0, missedAll: [], usedQ: new Set() };
+  showScreen('game'); setupDpad(); startRound();
+}
+function startRound() {
+  G.portalOpen = 0; G.portalPerm = false;
+  const m = mazeFor(G.round);
+  G.grid = m.map(r => r.split('')); G.rows = m.length; G.cols = m[0].length; G.portals = [];
+  // wrap-around portals on the edges: left <-> right across the middle row, top <-> bottom down the middle column
+  for (let y = 0; y < G.rows; y++) for (let x = 0; x < G.cols; x++) if (G.grid[y][x] === 'P') G.grid[y][x] = '#';
+  { const my = Math.floor(G.rows / 2), mx = Math.floor(G.cols / 2);
+    [[0, my, 1, my], [G.cols - 1, my, G.cols - 2, my], [mx, 0, mx, 1], [mx, G.rows - 1, mx, G.rows - 2]].forEach(([x, y, ix, iy]) => {
+      G.grid[y][x] = 'P'; if (G.grid[iy][ix] === '#') G.grid[iy][ix] = '.'; }); }
+  for (let y = 0; y < G.rows; y++) for (let x = 0; x < G.cols; x++) {
+    const c = G.grid[y][x];
+    if (c === 'S') G.start = { x, y };
+  }
+  G.rooms = {};
+  for (let y = 0; y < G.rows; y++) for (let x = 0; x < G.cols; x++) {
+    const c = G.grid[y][x]; if (!isRoom(c)) continue;
+    const r = G.rooms[c] || (G.rooms[c] = { id: c, x0: x, y0: y, x1: x, y1: y, door: null });
+    r.x0 = Math.min(r.x0, x); r.y0 = Math.min(r.y0, y); r.x1 = Math.max(r.x1, x); r.y1 = Math.max(r.y1, y);
+    for (const d of DIRS) { const n = cell(x + d.dx, y + d.dy); if (n !== '#' && !isRoom(n)) r.door = { x: x + d.dx, y: y + d.dy }; }
+  }
+  G.inRoom = null;
+  makeEscapeWalls(+S.escapeWalls || 0);
+  placePortals();
+  G.pads = []; G.boostT = 0; G.padSeeded = false;
+  // chaser start spots: corridor squares far from the center, spread apart from each other
+  { const dist = {}, q = [G.start]; dist[G.start.x + ',' + G.start.y] = 0;
+    for (let h = 0; h < q.length; h++) { const c = q[h], dv = dist[c.x + ',' + c.y];
+      for (const d of DIRS) { const n = { x: c.x + d.dx, y: c.y + d.dy }, k = n.x + ',' + n.y;
+        if (passE(n.x, n.y) && !(k in dist)) { dist[k] = dv + 1; q.push(n); } } }
+    const doors = Object.values(G.rooms).map(r => r.door.x + ',' + r.door.y);
+    const nearRoom = c => Object.values(G.rooms).some(r => c.x >= r.x0 - 2 && c.x <= r.x1 + 2 && c.y >= r.y0 - 2 && c.y <= r.y1 + 2);
+    const cands = q.filter(c => !doors.includes(c.x + ',' + c.y) && !nearRoom(c)).sort((a, b) => dist[b.x + ',' + b.y] - dist[a.x + ',' + a.y]);
+    G.spawns = [];
+    for (const c of cands) { if (G.spawns.length >= 5) break; if (G.spawns.every(s2 => Math.abs(s2.x - c.x) + Math.abs(s2.y - c.y) >= 7)) G.spawns.push(c); }
+    for (const c of cands) { if (G.spawns.length >= 5) break; if (!G.spawns.includes(c)) G.spawns.push(c); } }
+  G.questions = buildQuestions(S.qPerRound); G.qi = 0; G.roundRight = 0; G.roundMissed = [];
+  G.meter = 0; G.portalOpen = 0; G.portalPerm = false; G.burst = 0; G.invuln = 0;
+  const pal = THEMES[S.theme].pal; $('#game').style.background = pal.sky[0]; $('#game').style.setProperty('--trim', pal.trim);
+  if (G.round > 1) G.hearts = Math.min(S.hearts, G.hearts + 1);
+  const d = DIFF[S.diff];
+  G.enemyCount = Math.min(5, d.count + Math.floor((G.round - 1) / 2));
+  G.speedBase = runSpeed() * d.speed * (1 + 0.05 * (G.round - 1));
+  G.player = mkEnt(G.start); G.player.nextDir = null;
+  G.enemies = [];
+  for (let i = 0; i < G.enemyCount; i++) {
+    const sp = G.spawns[i % G.spawns.length]; const e = mkEnt(sp); e.spawn = sp; e.sprite = THEMES[S.theme].sprites[i % 5]; e.smart = Math.max(0.3, d.smart - i * 0.07);
+    e.release = 1 + i * 1.6; e.scared = 0; e.dead = 0; G.enemies.push(e);
+  }
+  resize(); loadQuestion(); updateHud();
+  showIntro(`Round ${G.round} of ${S.rounds}`);
+}
+const PORTAL_COLORS = [{ name: 'blue', c: '#3A8DDE', glow: '#9fd0ff' }, { name: 'red', c: '#ff4d6d', glow: '#ffb3c1' }, { name: 'green', c: '#3ddc84', glow: '#b6ffd6' }];
+function placePortals() {
+  const my = Math.floor(G.rows / 2), mx = Math.floor(G.cols / 2), WRAP = { name: 'purple', c: '#a66cf0', glow: '#e7d4ff' };
+  G.portals = [
+    { x: 0, y: my, pair: 'h', color: WRAP, edge: 'L' }, { x: G.cols - 1, y: my, pair: 'h', color: WRAP, edge: 'R' },
+    { x: mx, y: 0, pair: 'v', color: WRAP, edge: 'T' }, { x: mx, y: G.rows - 1, pair: 'v', color: WRAP, edge: 'B' }
+  ];
+  // Colored portals stay at least 2 squares from every room (every doorway, not just one), and are never
+  // placed so that the only way to a room runs through one (walking onto an open portal would whisk him away).
+  const wraps = G.portals.slice();
+  const nearRoom = (x, y) => Object.values(G.rooms).some(r => x >= r.x0 - 2 && x <= r.x1 + 2 && y >= r.y0 - 2 && y <= r.y1 + 2);
+  const cands = [];
+  for (let y = 1; y < G.rows - 1; y++) for (let x = 1; x < G.cols - 1; x++)
+    if (G.grid[y][x] === '.' && !nearRoom(x, y) && Math.abs(x - G.start.x) + Math.abs(y - G.start.y) >= 3) cands.push({ x, y });
+  const far = (a, b) => Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
+  const roomsReachable = () => { // walk from the start treating colored portals as blocked
+    const blocked = new Set(G.portals.filter(p => !p.edge).map(p => p.x + ',' + p.y)), seen = new Set([G.start.x + ',' + G.start.y]), q = [G.start], hit = new Set();
+    for (let h = 0; h < q.length; h++) { const c = q[h];
+      for (const d of DIRS) { const nx = c.x + d.dx, ny = c.y + d.dy, k = nx + ',' + ny, ch = cell(nx, ny);
+        if (ch === '#' || ch === 'P' || isOneWay(ch) || blocked.has(k) || seen.has(k)) continue;
+        if (isRoom(ch)) { hit.add(ch); continue; }
+        seen.add(k); q.push({ x: nx, y: ny }); } }
+    return Object.keys(G.rooms).every(id => hit.has(id));
+  };
+  for (let attempt = 0; attempt < 40; attempt++) {
+    G.portals = wraps.slice();
+    const pairs = S.portalPairs === undefined ? 2 : +S.portalPairs; if (!pairs) return;
+    for (let t = 0; t < 300 && G.portals.length < wraps.length + 2 * pairs; t++) {
+      const k = (G.portals.length - wraps.length) / 2, a = R.pick(cands), b = R.pick(cands);
+      if (!a || !b || far(a, b) < Math.max(10, G.cols / 2)) continue;           // the two ends of a pair are far apart
+      if (G.portals.some(p => far(p, a) < 4 || far(p, b) < 4)) continue;
+      const col = PORTAL_COLORS[k];
+      G.portals.push({ x: a.x, y: a.y, pair: k, color: col }, { x: b.x, y: b.y, pair: k, color: col });
+    }
+    if (roomsReachable()) return;
+  }
+  G.portals = wraps; // couldn't place them safely: skip colored portals this round rather than block a room
+}
+function makeEscapeWalls(n) {
+  if (!n) return;
+  const plain = c => c === '.' || c === 'S';
+  const nearRoom = (x, y) => Object.values(G.rooms).some(r => x >= r.x0 - 1 && x <= r.x1 + 1 && y >= r.y0 - 1 && y <= r.y1 + 1);
+  const walk = (a, b) => { // steps between two squares without using the wall
+    const seen = { [a.x + ',' + a.y]: 0 }, q = [a];
+    for (let h = 0; h < q.length; h++) { const c = q[h], dv = seen[c.x + ',' + c.y]; if (c.x === b.x && c.y === b.y) return dv;
+      for (const d of DIRS) { const nx = c.x + d.dx, ny = c.y + d.dy, k = nx + ',' + ny, ch = cell(nx, ny);
+        if (ch !== '#' && ch !== 'P' && !isRoom(ch) && !isOneWay(ch) && !(k in seen)) { seen[k] = dv + 1; q.push({ x: nx, y: ny }); } } }
+    return 999;
+  };
+  const cands = [];
+  for (let y = 2; y < G.rows - 2; y++) for (let x = 2; x < G.cols - 2; x++) {
+    if (G.grid[y][x] !== '#' || nearRoom(x, y)) continue;
+    const L = cell(x - 1, y), Rr = cell(x + 1, y), U = cell(x, y - 1), D = cell(x, y + 1);
+    if (plain(L) && plain(Rr) && U === '#' && D === '#') cands.push({ x, y, axis: 'h', gain: walk({ x: x - 1, y }, { x: x + 1, y }) });
+    else if (plain(U) && plain(D) && L === '#' && Rr === '#') cands.push({ x, y, axis: 'v', gain: walk({ x, y: y - 1 }, { x, y: y + 1 }) });
+  }
+  // prefer walls that save a long trip; on very open maps fall back to the best shortcuts available
+  const good = R.shuffle(cands.filter(c => c.gain >= 8)).concat(R.shuffle(cands.filter(c => c.gain >= 4 && c.gain < 8))), chosen = [];
+  for (const c of good) { if (chosen.length >= n) break; if (chosen.every(o => Math.abs(o.x - c.x) + Math.abs(o.y - c.y) >= 6)) chosen.push(c); }
+  chosen.forEach(c => { G.grid[c.y][c.x] = c.axis === 'h' ? R.pick(['>', '<']) : R.pick(['v', '^']); });
+}
+function spawnPad() {
+  if (!S.boostPads || !G.pads || G.pads.length >= (S.padCount || 7)) return;
+  const doors = Object.values(G.rooms).map(r => r.door.x + ',' + r.door.y);
+  const px = Math.round(G.player ? G.player.x : G.start.x), py = Math.round(G.player ? G.player.y : G.start.y);
+  // pads go only on straight hallway pieces with a long runway, never in a corner or at a turn,
+  // so a boost doesn't run him straight into a wall
+  const open = (x, y) => { const c = cell(x, y); return c === '.' || c === 'S'; };
+  const run = (x, y, dx, dy) => { let n = 0; while (open(x + dx * (n + 1), y + dy * (n + 1)) && n < 20) n++; return n; };
+  const runway = (x, y) => {
+    const L = open(x - 1, y), Rr = open(x + 1, y), U = open(x, y - 1), D = open(x, y + 1);
+    if (L && Rr && !U && !D) return { len: run(x, y, -1, 0) + run(x, y, 1, 0) + 1, min: Math.min(run(x, y, -1, 0), run(x, y, 1, 0)) };
+    if (U && D && !L && !Rr) return { len: run(x, y, 0, -1) + run(x, y, 0, 1) + 1, min: Math.min(run(x, y, 0, -1), run(x, y, 0, 1)) };
+    return null; // corner, dead end, or junction
+  };
+  const pick = (minLen, minSide) => {
+    const cands = [];
+    for (let y = 1; y < G.rows - 1; y++) for (let x = 1; x < G.cols - 1; x++) {
+      if (G.grid[y][x] !== '.' || doors.includes(x + ',' + y) || portalAt(x, y)) continue;
+      if (Math.abs(x - px) + Math.abs(y - py) < 4 || G.pads.some(p => Math.abs(p.x - x) + Math.abs(p.y - y) < 3)) continue;
+      const r = runway(x, y); if (r && r.len >= minLen && r.min >= minSide) cands.push({ x, y });
+    }
+    return cands;
+  };
+  const cands = [[7, 2], [5, 2], [5, 1], [4, 1]].map(([a, b2]) => pick(a, b2)).find(c => c.length) || [];
+  if (cands.length) G.pads.push(R.pick(cands));
+}
+function resetPositions(keepScared) {
+  if (G.player) G.player.tpLock = null;
+  Object.assign(G.player, mkEnt(G.start)); G.player.nextDir = null; G.inRoom = null;
+  G.enemies.forEach((e, i) => { Object.assign(e, mkEnt(e.spawn)); e.release = 0.6 + i * 0.6; if (!keepScared) e.scared = 0; e.dead = 0; });
+  G.boostT = 0; if (G.pads && !G.padSeeded) { G.padSeeded = true; for (let k = 0; k < (S.padCount || 7); k++) spawnPad(); }
+}
+function loadQuestion() {
+  G.q = G.questions[G.qi]; G.qElapsed = 0; G.lastTick = 99;
+  $('#qText').innerHTML = fmtQ(G.q.q);
+  G.zones = placeZones(G.q.opts);
+  if (G.player) resetPositions(true);
+  $('#opts').innerHTML = G.zones.slice().sort((a, b) => a.room.id.localeCompare(b.room.id)).map(z => `<span class="chip" style="border-color:${z.color.c}"><span class="shape" style="color:${z.color.c}">${z.color.shape}</span>${esc(z.opt)}</span>`).join('');
+  if (S.readAloud) speak(G.q.q);
+  if (G.state !== 'done') showIntro('');
+  setTime(S.timer); $('#timerFill').style.width = '100%'; $('#timerFill').style.background = 'var(--kelly)';
+  updateHud();
+}
+// the problem written down the page, digits lined up by place value
+function vStack(v) {
+  const A = fmt(v.a), B = fmt(v.b), w = Math.max(A.length, B.length) + 2;
+  const pad = s => '\u00a0'.repeat(w - s.length) + s;
+  return `<div class="vstack"><div>${pad(A)}</div><div class="vb"><span class="vop">${v.op === '+' ? '+' : '−'}</span>${pad(B).slice(1)}</div></div>`;
+}
+function showIntro(label) {
+  $('#qiLabel').textContent = label || `Question ${G.qi + 1} of ${S.qPerRound}`;
+  $('#qiText').innerHTML = fmtQ(G.q.q) + (S.vertical && G.q.v ? vStack(G.q.v) : '');
+  $('#qiGrid').innerHTML = ['1', '2', '3', '4'].map(id => {
+    const z = G.zones.find(z => z.room.id === id);
+    return z ? `<div class="qiCell" style="border-color:${z.color.c}"><span class="shape" style="color:${z.color.c}">${z.color.shape}</span>${esc(z.opt)}</div>` : '<div class="qiCell empty">—</div>';
+  }).join('');
+  $('#qiGo').classList.remove('show'); $('#qintro').classList.add('show');
+  G.state = 'intro'; G.introT = 0;
+}
+function startPlay() {
+  if (!G || G.state !== 'intro' || G.introT < 1) return;
+  $('#qintro').classList.remove('show'); G.state = 'play'; G.qElapsed = 0;
+}
+function placeZones(opts) {
+  // each room keeps its own color + shape, so a room is always "the red circle room", etc.
+  // The correct answer never lands in the same room twice in a row, and rooms used less often
+  // are favored so all four corners get used, without a fixed pattern a student could predict.
+  const all = Object.keys(G.rooms), ans = G.q ? G.q.a : null;
+  G.ansCount = G.ansCount || {};
+  let ansRoom = null;
+  if (ans !== null && opts.includes(ans)) {
+    const cands = all.filter(id => id !== G.lastAnsRoom);
+    const w = cands.map(id => 1 / (1 + (G.ansCount[id] || 0)) ** 2), tot = w.reduce((a, b) => a + b, 0);
+    let r = Math.random() * tot; ansRoom = cands[cands.length - 1];
+    for (let n = 0; n < cands.length; n++) { r -= w[n]; if (r <= 0) { ansRoom = cands[n]; break; } }
+    G.ansCount[ansRoom] = (G.ansCount[ansRoom] || 0) + 1; G.lastAnsRoom = ansRoom;
+  }
+  const rest = R.shuffle(all.filter(id => id !== ansRoom));
+  return opts.map(o => { const id = o === ans && ansRoom ? ansRoom : rest.shift(); return { room: G.rooms[id], opt: o, color: COLORS[+id - 1] }; });
+}
+
+/* ===================================================================== HUD / TOAST */
+function setTime(sec) {
+  const s = Math.max(0, Math.ceil(sec)); const el = $('#hudTime'); const txt = Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
+  if (el.textContent !== txt) el.textContent = txt; el.classList.toggle('low', s <= 5);
+}
+function updateHud() {
+  const qn = Math.min(G.qi + 1, S.qPerRound);
+  $('#hudRound').textContent = window.innerWidth < 640 ? `R${G.round} · ${qn}/${S.qPerRound}` : `Round ${G.round}/${S.rounds} · Q ${qn}/${S.qPerRound}`;
+  $('#hudScore').textContent = `⭐ ${G.score}`;
+  $('#hudHearts').textContent = '❤️'.repeat(Math.max(0, G.hearts)) + '🖤'.repeat(Math.max(0, S.hearts - G.hearts));
+  const m = $('#meter');
+  if (G.portalOpen > 0) { m.className = 'meter open'; m.textContent = G.portalPerm ? '🌀 PORTALS OPEN for the rest of this round' : `🌀 PORTALS OPEN · ${Math.ceil(G.portalOpen)}s`; }
+  else {
+    m.className = 'meter';
+    const left = S.unlockAt - G.meter;
+    m.textContent = `🔒 Portals ${'⚡'.repeat(G.meter)}${'⚪'.repeat(left)}  ·  ${left} more right to open`;
+  }
+}
+function toast(msg, kind, secs = 1.4) {
+  const t = $('#toast'); t.textContent = msg; t.className = 'show ' + kind; toastTimer = secs;
+}
+
+/* ===================================================================== ANSWERING */
+function correct() {
+  G.streak++; G.bestStreak = Math.max(G.bestStreak, G.streak);
+  const pts = 100 + Math.min(G.streak - 1, 5) * 20; G.score += pts; G.roundRight++; G.totalRight++; G.totalAsked++;
+  G.enemies.forEach(e => { if (!e.dead) { e.scared = DIFF[S.diff].scared; if (e.release <= 0 && (e.dx || e.dy)) { [e.tx, e.fx] = [e.fx, e.tx]; [e.ty, e.fy] = [e.fy, e.ty]; e.dx = -e.dx; e.dy = -e.dy; } } });
+  SFX.right();
+  if (G.portalOpen <= 0) {
+    G.meter++;
+    if (G.meter >= S.unlockAt) {
+      G.meter = 0; G.portalPerm = S.portalStay === 'round'; G.portalOpen = G.portalPerm ? 1 : +S.portalStay; SFX.open();
+      toast(G.portalPerm ? `🌀 PORTALS UNLOCKED for this round!  +${pts}` : `🌀 PORTALS OPEN for ${S.portalStay}s!  +${pts}`, 'info', 2.2);
+    }
+    else toast(`✔ Correct!  +${pts}${G.streak > 1 ? `  🔥${G.streak}` : ''}`, 'good');
+  } else toast(`✔ Correct!  +${pts}`, 'good');
+  advance();
+}
+function miss(chose, reason) {
+  G.streak = 0; G.hearts--; G.totalAsked++;
+  if (S.wrongDrops && G.portalOpen <= 0) G.meter = Math.max(0, G.meter - 1);
+  G.burst = 3;
+  const rec = { sub: G.q.sub, q: G.q.q, a: G.q.a, chose }; G.roundMissed.push(rec); G.missedAll.push(rec);
+  SFX.wrong(); toast(`${reason}  Answer: ${G.q.a}`, 'bad', 2.2);
+  G.invuln = 3.5; G.state = 'reveal'; G.revealT = 2.2; updateHud();
+}
+function advance() {
+  G.qi++;
+  if (G.qi >= S.qPerRound) { updateHud(); setTimeout(roundEnd, 350); G.state = 'done'; return; }
+  loadQuestion();
+}
+function finishReveal() {
+  if (G.hearts <= 0) return endGame(false);
+  G.state = 'play'; advance();
+}
+function caught(e) {
+  G.hearts--; G.streak = 0; SFX.caught();
+  toast(`💥 ${THEMES[S.theme].one} got you!`, 'bad', 1.6);
+  if (G.hearts <= 0) { updateHud(); G.state = 'done'; setTimeout(() => endGame(false), 900); return; }
+  resetPositions(); G.qElapsed = 0; G.invuln = 2; updateHud();
+  G.state = 'countdown'; G.cd = 1.5; G.cdLabel = 'Get ready';
+}
+
+/* ===================================================================== MOVEMENT */
+function stepEnt(e, speed, dt, choose) {
+  let move = speed * dt, guard = 0;
+  while (move > 0 && guard++ < 5) {
+    if (e.x === e.tx && e.y === e.ty) {
+      const d = choose(e);
+      if (!d) { e.dx = e.dy = 0; return; }
+      e.dx = d.dx; e.dy = d.dy; e.fx = e.x; e.fy = e.y; e.tx = e.x + d.dx; e.ty = e.y + d.dy;
+    }
+    const ddx = e.tx - e.x, ddy = e.ty - e.y, dist = Math.abs(ddx) + Math.abs(ddy);
+    if (move >= dist) { e.x = e.tx; e.y = e.ty; move -= dist; }
+    else { e.x += Math.sign(ddx) * move; e.y += Math.sign(ddy) * move; move = 0; }
+  }
+}
+const portalAt = (x, y) => (G.portals || []).find(p => p.x === x && p.y === y);
+function partner(x, y) { const p = portalAt(x, y); return p && G.portals.find(o => o.pair === p.pair && o !== p); }
+function teleport(e, sound, wrapOnly) {
+  // stepping onto an open portal sends you to the same-colored one; you don't bounce back until you step off
+  const here = portalAt(e.x, e.y);
+  if (!here) { e.tpLock = null; return; }
+  if (G.portalOpen <= 0 || e.tpLock === here || (wrapOnly && !here.edge)) return;
+  const o = partner(e.x, e.y); if (!o) return;
+  e.x = e.tx = e.fx = o.x; e.y = e.ty = e.fy = o.y; e.tpLock = o; if (sound) SFX.portal();
+}
+function playerChoose(e) {
+  teleport(e, true);
+  if (held.length) {
+    const cur = { dx: e.dx, dy: e.dy }, moving = e.dx || e.dy;
+    const ok = d => passP(e.x + d.dx, e.y + d.dy, d);
+    const isCur = d => d.dx === cur.dx && d.dy === cur.dy, isRev = d => moving && d.dx === -cur.dx && d.dy === -cur.dy;
+    const pick = held.find(d => !isCur(d) && !isRev(d) && ok(d)) || held.find(d => isCur(d) && ok(d)) || held.find(ok);
+    if (pick) { e.nextDir = { dx: pick.dx, dy: pick.dy }; return e.nextDir; }
+  }
+  const nd = e.nextDir;
+  if (nd && passP(e.x + nd.dx, e.y + nd.dy, nd)) return nd;
+  if ((e.dx || e.dy) && passP(e.x + e.dx, e.y + e.dy, { dx: e.dx, dy: e.dy })) return { dx: e.dx, dy: e.dy };
+  return null;
+}
+let held = []; // arrow keys currently held down, most recent first
+const DIRS = [{ dx: 1, dy: 0 }, { dx: -1, dy: 0 }, { dx: 0, dy: 1 }, { dx: 0, dy: -1 }];
+function enemyChoose(e) {
+  teleport(e, false, true); // chasers can only use the purple wrap-around portals
+  const dirs = DIRS.filter(d => passE(e.x + d.dx, e.y + d.dy));
+  let opts = dirs.filter(d => !((e.dx || e.dy) && d.dx === -e.dx && d.dy === -e.dy));
+  if (!opts.length) opts = dirs; if (!opts.length) return null;
+  const val = d => G.dist[(e.y + d.dy) * G.cols + (e.x + d.dx)];
+  if (e.scared > 0) return Math.random() < 0.8 ? opts.reduce((a, b) => val(b) > val(a) ? b : a) : R.pick(opts);
+  return Math.random() < e.smart ? opts.reduce((a, b) => val(b) < val(a) ? b : a) : R.pick(opts);
+}
+function computeDist() {
+  const n = G.rows * G.cols; if (!G.dist || G.dist.length !== n) G.dist = new Array(n);
+  G.dist.fill(999);
+  const sx = Math.round(G.player.x), sy = Math.round(G.player.y);
+  let startX = sx, startY = sy;
+  if (cell(sx, sy) === 'P') { if (sx === 0) startX = 1; else if (sx === G.cols - 1) startX = G.cols - 2; else if (sy === 0) startY = 1; else startY = G.rows - 2; }
+  const rc = cell(sx, sy); if (isRoom(rc)) { startX = G.rooms[rc].door.x; startY = G.rooms[rc].door.y; }
+  const q = [[startX, startY]]; G.dist[startY * G.cols + startX] = 0;
+  for (let h = 0; h < q.length; h++) {
+    const [x, y] = q[h]; const dv = G.dist[y * G.cols + x];
+    for (const d of DIRS) { const nx = x + d.dx, ny = y + d.dy;
+      if (passE(nx, ny) && G.dist[ny * G.cols + nx] > dv + 1) { G.dist[ny * G.cols + nx] = dv + 1; q.push([nx, ny]); } }
+    if (G.portalOpen > 0 && portalAt(x, y) && portalAt(x, y).edge) { const o = partner(x, y); if (o && G.dist[o.y * G.cols + o.x] > dv + 1) { G.dist[o.y * G.cols + o.x] = dv + 1; q.push([o.x, o.y]); } }
+  }
+}
+function setDir(dx, dy) {
+  if (!G || !G.player) return; if (G.state === 'intro') startPlay(); const p = G.player; p.nextDir = { dx, dy };
+  if ((p.dx && p.dx === -dx) || (p.dy && p.dy === -dy)) {
+    [p.tx, p.fx] = [p.fx, p.tx]; [p.ty, p.fy] = [p.fy, p.ty]; p.dx = dx; p.dy = dy; return;
+  }
+  // forgiving turns: a late press within ~half a square after an opening still takes the turn
+  const moving = p.x !== p.tx || p.y !== p.ty;
+  if (moving && (p.dx !== dx || p.dy !== dy)) {
+    const past = Math.abs(p.x - p.fx) + Math.abs(p.y - p.fy);
+    if (past < 0.5 && cell(p.fx, p.fy) !== 'P' && passP(p.fx + dx, p.fy + dy, { dx, dy })) {
+      p.x = p.tx = p.fx; p.y = p.ty = p.fy;
+    }
+  }
+}
+
+/* ===================================================================== UPDATE */
+function update(dt) {
+  if (toastTimer > 0) { toastTimer -= dt; if (toastTimer <= 0) $('#toast').classList.remove('show'); }
+  if (G.state === 'intro') { G.introT += dt; if (G.introT >= 1) $('#qiGo').classList.add('show'); return; }
+  if (G.state === 'countdown') { G.cd -= dt; if (G.cd <= 0) G.state = 'play'; return; }
+  if (G.state === 'reveal') { G.revealT -= dt; if (G.revealT <= 0) finishReveal(); return; }
+  if (G.state !== 'play') return;
+
+  G.qElapsed += dt;
+  const frac = Math.min(1, G.qElapsed / S.timer);
+  const fill = $('#timerFill'); fill.style.width = ((1 - frac) * 100) + '%';
+  setTime(S.timer - G.qElapsed);
+  fill.style.background = frac > 0.75 ? 'var(--red)' : frac > 0.5 ? 'var(--yellow)' : 'var(--kelly)';
+  const left = Math.ceil(S.timer - G.qElapsed);
+  if (left <= 5 && left !== G.lastTick) { G.lastTick = left; SFX.tick(); }
+  if (G.qElapsed >= S.timer) { miss('(time ran out)', "⏰ Time's up!"); return; }
+
+  if (G.invuln > 0) G.invuln -= dt;
+  if (G.burst > 0) G.burst -= dt;
+  if (G.portalOpen > 0 && !G.portalPerm) { const before = Math.ceil(G.portalOpen); G.portalOpen -= dt;
+    if (G.portalOpen <= 0) { G.portalOpen = 0; toast('🔒 Portals closed', 'info', 1.2); updateHud(); }
+    else if (Math.ceil(G.portalOpen) !== before) updateHud(); }
+
+  computeDist();
+  if (G.boostT > 0) G.boostT -= dt;
+  stepEnt(G.player, runSpeed() * (G.boostT > 0 ? 1.6 : 1), dt, playerChoose);
+  const stall = 1 + 0.6 * frac;
+  G.enemies.forEach(e => {
+    if (e.dead > 0) { e.dead -= dt; if (e.dead <= 0) { Object.assign(e, mkEnt(e.spawn)); e.release = 0.5; } return; }
+    if (e.release > 0) { e.release -= dt; return; }
+    if (e.scared > 0) e.scared -= dt;
+    const sp = e.scared > 0 ? G.speedBase * 0.55 : G.speedBase * stall * (G.burst > 0 ? 1.3 : 1);
+    stepEnt(e, sp, dt, enemyChoose);
+  });
+
+  const p = G.player;
+  for (const e of G.enemies) {
+    if (e.dead > 0 || e.release > 0) continue;
+    if (Math.abs(e.x - p.x) + Math.abs(e.y - p.y) < 0.7) {
+      if (e.scared > 0) { e.dead = 3; e.scared = 0; G.score += 50; SFX.eat(); toast('😆 Tagged! +50', 'good', 1); updateHud(); }
+      else if (G.invuln <= 0) { caught(e); return; }
+    }
+  }
+  const tx = Math.round(p.x), ty = Math.round(p.y);
+  if (G.pads && G.pads.length) {
+    G.pads.forEach(pd => { if (pd.cool > 0) pd.cool -= dt; if (Math.abs(pd.x - p.x) + Math.abs(pd.y - p.y) > 1) pd.warned = false; });
+    // a chaser AHEAD of the runner (in the direction he's moving, down the same hallway, within 5 squares)
+    // switches the pad off so he doesn't rocket into it. A chaser behind him never does: boosts are for getting away.
+    const chaserAhead = pd => {
+      if (!p.dx && !p.dy) return false;
+      for (let k = 0; k <= 5; k++) {
+        const x = pd.x + p.dx * k, y = pd.y + p.dy * k;
+        if (k > 0 && !passE(x, y) && !isRoom(cell(x, y))) return false; // wall: nothing further can be in the way
+        if (G.enemies.some(e => !(e.dead > 0) && !(e.release > 0) && !(e.scared > 0) && Math.abs(e.x - x) < 0.6 && Math.abs(e.y - y) < 0.6)) return true;
+      }
+      return false;
+    };
+    const pd = G.pads.find(pd => !(pd.cool > 0) && Math.abs(pd.x - p.x) + Math.abs(pd.y - p.y) < 0.5);
+    if (pd) {
+      if (chaserAhead(pd)) { if (!pd.warned) { pd.warned = true; toast('⚠️ Chaser ahead! No boost', 'bad', 1); } }
+      else { pd.cool = 3; G.boostT = 3; SFX.boost(); toast('🚀 Speed boost!', 'good', 1.2); }
+    }
+  }
+  if (Math.abs(p.x - tx) + Math.abs(p.y - ty) < 0.35) {
+    const rc = cell(tx, ty);
+    if (!isRoom(rc)) G.inRoom = null;
+    else if (rc !== G.inRoom) {
+      G.inRoom = rc;
+      const z = G.zones.find(z => z.room.id === rc);
+      if (!z) toast('This room is empty this time', 'info', 1.2);
+      else if (z.opt === G.q.a) correct(); else miss(z.opt, '✖ Not quite.');
+    }
+  }
+}
+
+/* ===================================================================== RENDER */
+let bgCanvas = null, ox = 0, oy = 0, viewW = 0, viewH = 0, twinkles = [];
+function resize() {
+  if (!G || !G.cols) return;
+  const wrap = $('#cwrap'); viewW = wrap.clientWidth; viewH = wrap.clientHeight;
+  const top = $('#hudTop').offsetHeight + 6;
+  tile = Math.max(14, Math.floor(Math.min((viewW - 16) / G.cols, (viewH - top - 8) / G.rows)));
+  ox = Math.floor((viewW - G.cols * tile) / 2); oy = Math.floor(top + Math.max(0, (viewH - top - 8 - G.rows * tile) / 2));
+  dpr = window.devicePixelRatio || 1;
+  cv.width = viewW * dpr; cv.height = viewH * dpr; cv.style.width = viewW + 'px'; cv.style.height = viewH + 'px';
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  buildBg();
+}
+function sparkle(c, x, y, r, col, a) {
+  c.globalAlpha = a; c.fillStyle = col; c.beginPath();
+  c.moveTo(x, y - r); c.quadraticCurveTo(x, y, x + r, y); c.quadraticCurveTo(x, y, x, y + r); c.quadraticCurveTo(x, y, x - r, y); c.quadraticCurveTo(x, y, x, y - r);
+  c.fill(); c.globalAlpha = 1;
+}
+function buildBg() {
+  const pal = THEMES[S.theme].pal, W = viewW, H = viewH, T = tile;
+  bgCanvas = bgCanvas || document.createElement('canvas');
+  bgCanvas.width = W * dpr; bgCanvas.height = H * dpr;
+  const b = bgCanvas.getContext('2d'); b.setTransform(dpr, 0, 0, dpr, 0, 0);
+  let seed = G.round * 9973 + 17; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  // sky
+  const g = b.createLinearGradient(0, 0, W * 0.3, H); g.addColorStop(0, pal.sky[0]); g.addColorStop(0.55, pal.sky[1]); g.addColorStop(1, pal.sky[2]);
+  b.fillStyle = g; b.fillRect(0, 0, W, H);
+  // nebula haze
+  for (let i = 0; i < 4; i++) {
+    const nx = rnd() * W, ny = rnd() * H, nr = Math.max(W, H) * (0.18 + rnd() * 0.25);
+    const ng = b.createRadialGradient(nx, ny, 0, nx, ny, nr); ng.addColorStop(0, 'rgba(255,255,255,.07)'); ng.addColorStop(1, 'rgba(255,255,255,0)');
+    b.fillStyle = ng; b.fillRect(0, 0, W, H);
+  }
+  // stars
+  for (let i = 0; i < pal.starN; i++) { b.globalAlpha = 0.35 + rnd() * 0.65; b.fillStyle = pal.star; b.beginPath(); b.arc(rnd() * W, rnd() * H, 0.5 + rnd() * 1.5, 0, 7); b.fill(); }
+  b.globalAlpha = 1;
+  for (let i = 0; i < 7; i++) sparkle(b, rnd() * W, rnd() * H, 4 + rnd() * 7, pal.sparkle, 0.75);
+  // planet / sun / moon
+  const R = Math.min(W, H) * pal.orbR * 1.6, px = W * (0.2 + rnd() * 0.6), py = H * (0.2 + rnd() * 0.5);
+  b.save(); b.shadowColor = pal.orb[1]; b.shadowBlur = R * 0.6;
+  const og = b.createRadialGradient(px - R * 0.35, py - R * 0.35, R * 0.1, px, py, R);
+  og.addColorStop(0, pal.orb[0]); og.addColorStop(0.6, pal.orb[1]); og.addColorStop(1, pal.orb[2]);
+  b.fillStyle = og; b.beginPath(); b.arc(px, py, R, 0, 7); b.fill(); b.restore();
+  if (pal.crater) { b.fillStyle = 'rgba(120,110,70,.22)'; [[-.3, -.1, .18], [.25, .2, .13], [.05, -.4, .09], [-.1, .38, .1]].forEach(([a, c, r]) => { b.beginPath(); b.arc(px + a * R, py + c * R, r * R, 0, 7); b.fill(); }); }
+  else { b.save(); b.beginPath(); b.arc(px, py, R, 0, 7); b.clip(); b.strokeStyle = 'rgba(255,255,255,.18)'; b.lineWidth = R * 0.09;
+    for (let k = -2; k <= 2; k++) { b.beginPath(); b.moveTo(px - R, py + k * R * 0.3); b.lineTo(px + R, py + k * R * 0.3 - R * 0.15); b.stroke(); } b.restore(); }
+  if (pal.hills) { b.fillStyle = pal.hills; b.beginPath(); b.moveTo(0, H); let x = 0;
+    while (x < W) { const w = 60 + rnd() * 160, h = H * (0.08 + rnd() * 0.2); b.lineTo(x + w * 0.45, H - h); b.lineTo(x + w * 0.55, H - h * 0.96); b.lineTo(x + w, H - h * 0.25); x += w; }
+    b.lineTo(W, H); b.closePath(); b.fill(); }
+  if (pal.fog) for (let i = 0; i < 6; i++) { b.fillStyle = 'rgba(180,255,235,.045)'; b.beginPath(); b.ellipse(rnd() * W, H * (0.5 + rnd() * 0.5), 160 + rnd() * 220, 30 + rnd() * 40, 0, 0, 7); b.fill(); }
+  // maze floor
+  b.save(); b.translate(ox, oy);
+  for (let y = 0; y < G.rows; y++) for (let x = 0; x < G.cols; x++) if (G.grid[y][x] !== '#' && !isOneWay(G.grid[y][x])) {
+    b.fillStyle = pal.floor; b.fillRect(x * T - 0.5, y * T - 0.5, T + 1, T + 1);
+    b.strokeStyle = pal.seam; b.lineWidth = 1; b.strokeRect(x * T + 0.5, y * T + 0.5, T - 1, T - 1);
+  }
+  // walls: piped edges between floor and wall
+  const segs = [];
+  for (let y = 0; y < G.rows; y++) for (let x = 0; x < G.cols; x++) {
+    const c = G.grid[y][x]; if (c === '#' || isOneWay(c)) continue;
+    for (const d of DIRS) {
+      const nx = x + d.dx, ny = y + d.dy;
+      if (c === 'P' && (nx < 0 || nx >= G.cols || ny < 0 || ny >= G.rows)) continue;
+      if (cell(nx, ny) !== '#' && !isOneWay(cell(nx, ny))) continue;
+      if (d.dx === 1) segs.push([x + 1, y, x + 1, y + 1]); else if (d.dx === -1) segs.push([x, y, x, y + 1]);
+      else if (d.dy === 1) segs.push([x, y + 1, x + 1, y + 1]); else segs.push([x, y, x + 1, y]);
+    }
+  }
+  const pipe = (col, w, dy) => { b.strokeStyle = col; b.lineWidth = w; b.lineCap = 'round'; b.beginPath();
+    segs.forEach(([a, c, d, e]) => { b.moveTo(a * T, c * T + dy); b.lineTo(d * T, e * T + dy); }); b.stroke(); };
+  pipe('rgba(0,0,0,.35)', T * 0.3, T * 0.07);
+  pipe(pal.edge, T * 0.26, 0);
+  pipe('rgba(0,0,0,.25)', T * 0.15, 0);
+  pipe(pal.trim, T * 0.1, 0);
+  b.restore();
+  // twinkling sparkles (animated each frame)
+  twinkles = []; for (let i = 0; i < 6; i++) twinkles.push({ x: rnd() * W, y: rnd() * H, r: 6 + rnd() * 9, ph: rnd() * 6.28 });
+}
+function rr(x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
+function emoji(ch, x, y, size, alpha = 1) {
+  ctx.globalAlpha = alpha; ctx.font = `${size}px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif`;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(ch, x, y); ctx.globalAlpha = 1;
+}
+function shadow(x, y, T) { ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.beginPath(); ctx.ellipse(x, y + T * 0.36, T * 0.3, T * 0.1, 0, 0, 7); ctx.fill(); }
+function render(ts) {
+  if (!G || !G.grid || !bgCanvas) return;
+  const T = tile, now = performance.now() / 1000, pal = THEMES[S.theme].pal;
+  ctx.drawImage(bgCanvas, 0, 0, viewW, viewH);
+  twinkles.forEach(t => sparkle(ctx, t.x, t.y, t.r * (0.6 + 0.4 * Math.sin(now * 2 + t.ph)), pal.sparkle, 0.35 + 0.35 * Math.sin(now * 2 + t.ph)));
+  ctx.save(); ctx.translate(ox, oy);
+  // portals: color-coded pairs
+  G.portals.forEach(p => {
+    if (p.edge) {
+      const off = { L: [-0.3, 0], R: [0.3, 0], T: [0, -0.3], B: [0, 0.3] }[p.edge];
+      const ex = p.x * T + T / 2 + off[0] * T, ey = p.y * T + T / 2 + off[1] * T;
+      ctx.save(); ctx.translate(ex, ey); if (p.edge === 'T' || p.edge === 'B') ctx.rotate(Math.PI / 2);
+      if (G.portalOpen > 0) {
+        const s3 = 1 + 0.06 * Math.sin(now * 6);
+        ctx.save(); ctx.shadowColor = p.color.c; ctx.shadowBlur = T * 0.8;
+        const eg = ctx.createRadialGradient(0, 0, 1, 0, 0, T * 0.5);
+        eg.addColorStop(0, '#ffffff'); eg.addColorStop(0.45, p.color.glow); eg.addColorStop(1, p.color.c);
+        ctx.fillStyle = eg; ctx.beginPath(); ctx.ellipse(0, 0, T * 0.2 * s3, T * 0.5 * s3, 0, 0, 7); ctx.fill();
+        ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.stroke(); ctx.restore();
+        for (let k = 0; k < 3; k++) { const a = now * 3 + k * 2.1; sparkle(ctx, Math.cos(a) * T * 0.35, Math.sin(a) * T * 0.5, T * 0.12, '#fff', 0.8); }
+      } else {
+        ctx.fillStyle = 'rgba(20,24,36,.9)'; ctx.beginPath(); ctx.ellipse(0, 0, T * 0.16, T * 0.44, 0, 0, 7); ctx.fill();
+        ctx.strokeStyle = p.color.c; ctx.lineWidth = 2; ctx.stroke();
+        ctx.strokeStyle = 'rgba(200,160,255,.6)'; ctx.lineWidth = 1.5;
+        for (let k = -2; k <= 2; k++) { ctx.beginPath(); ctx.moveTo(-T * 0.14, k * T * 0.14); ctx.lineTo(T * 0.14, k * T * 0.14); ctx.stroke(); }
+      }
+      ctx.restore();
+      if (G.portalOpen <= 0) emoji('🔒', p.x * T + T / 2 - off[0] * T * 0.5, p.y * T + T / 2 - off[1] * T * 0.5, T * 0.42, 0.9);
+      return;
+    }
+    const cx = p.x * T + T / 2, cy = p.y * T + T / 2, col = p.color;
+    if (G.portalOpen > 0) {
+      const s2 = 1 + 0.07 * Math.sin(now * 6 + p.pair);
+      ctx.save(); ctx.shadowColor = col.c; ctx.shadowBlur = T * 0.8;
+      const pg = ctx.createRadialGradient(cx, cy, 1, cx, cy, T * 0.48);
+      pg.addColorStop(0, '#ffffff'); pg.addColorStop(0.4, col.glow); pg.addColorStop(1, col.c);
+      ctx.fillStyle = pg; ctx.beginPath(); ctx.arc(cx, cy, T * 0.42 * s2, 0, 7); ctx.fill(); ctx.restore();
+      ctx.save(); ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.translate(cx, cy); ctx.rotate(now * 3);
+      for (let k = 0; k < 3; k++) { ctx.rotate(2.094); ctx.beginPath(); ctx.arc(0, 0, T * 0.3, 0, 1.2); ctx.stroke(); }
+      ctx.restore();
+    } else {
+      ctx.save(); ctx.globalAlpha = 0.85; ctx.fillStyle = 'rgba(20,24,36,.9)'; ctx.beginPath(); ctx.arc(cx, cy, T * 0.38, 0, 7); ctx.fill();
+      ctx.strokeStyle = col.c; ctx.lineWidth = 3; ctx.setLineDash([4, 4]); ctx.stroke(); ctx.setLineDash([]); ctx.restore();
+      emoji('🔒', cx, cy + 1, T * 0.36, 0.9);
+    }
+  });
+  // escape walls (glowing one-way doors with moving arrows)
+  for (let y = 0; y < G.rows; y++) for (let x = 0; x < G.cols; x++) {
+    const c = G.grid[y][x]; if (!isOneWay(c)) continue;
+    const [dx, dy] = ONEWAY[c], cx = x * T + T / 2, cy = y * T + T / 2;
+    ctx.save(); ctx.shadowColor = '#ff8a1a'; ctx.shadowBlur = T * 0.55;
+    ctx.fillStyle = 'rgba(255,128,20,.55)'; rr(x * T + T * 0.06, y * T + T * 0.06, T * 0.88, T * 0.88, T * 0.18); ctx.fill();
+    ctx.strokeStyle = '#ffc48a'; ctx.lineWidth = 2.5; ctx.stroke(); ctx.restore();
+    ctx.save(); ctx.beginPath(); ctx.rect(x * T, y * T, T, T); ctx.clip();
+    ctx.translate(cx, cy); ctx.rotate(Math.atan2(dy, dx));
+    ctx.strokeStyle = '#ffffff'; ctx.lineWidth = Math.max(2.5, T * 0.11); ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    for (let k = 0; k < 3; k++) {
+      const off = (((now * 1.2 + k / 3) % 1) - 0.5) * T * 0.9; ctx.globalAlpha = 0.35 + 0.65 * Math.sin(Math.PI * ((now * 1.2 + k / 3) % 1));
+      ctx.beginPath(); ctx.moveTo(off - T * 0.12, -T * 0.2); ctx.lineTo(off + T * 0.06, 0); ctx.lineTo(off - T * 0.12, T * 0.2); ctx.stroke();
+    }
+    ctx.restore();
+  }
+  // boost pads
+  (G.pads || []).forEach(pd => {
+    const cx = pd.x * T + T / 2, cy = pd.y * T + T / 2, pul = 0.5 + 0.5 * Math.sin(now * 5 + pd.x);
+    ctx.save(); if (pd.cool > 0) ctx.globalAlpha = 0.35; ctx.shadowColor = '#ffe14d'; ctx.shadowBlur = T * (0.4 + 0.4 * pul);
+    ctx.fillStyle = 'rgba(255,214,60,.85)'; ctx.beginPath(); ctx.arc(cx, cy, T * (0.3 + 0.04 * pul), 0, 7); ctx.fill();
+    ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.stroke(); ctx.restore();
+    emoji('⚡', cx, cy + 1, T * 0.42);
+  });
+  // answer rooms
+  const reveal = G.state === 'reveal';
+  Object.values(G.rooms).forEach(r => {
+    const z = G.zones.find(z => z.room === r);
+    const x = r.x0 * T, y = r.y0 * T, w = (r.x1 - r.x0 + 1) * T, h = (r.y1 - r.y0 + 1) * T;
+    const dim = !z || (reveal && z.opt !== G.q.a);
+    const pulse = reveal && z && z.opt === G.q.a ? 0.5 + 0.5 * Math.sin(now * 10) : 0;
+    ctx.save();
+    if (z) {
+      ctx.globalAlpha = dim ? 0.22 : 0.5 + 0.3 * pulse; ctx.fillStyle = z.color.c; ctx.fillRect(x + 2, y + 2, w - 4, h - 4);
+      ctx.globalAlpha = dim ? 0.3 : 1; ctx.shadowColor = z.color.c; ctx.shadowBlur = dim ? 0 : T * 0.4;
+      ctx.strokeStyle = z.color.c; ctx.lineWidth = 3; ctx.strokeRect(x + T * 0.16, y + T * 0.16, w - T * 0.32, h - T * 0.32);
+    } else { ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.fillRect(x + 2, y + 2, w - 4, h - 4); }
+    ctx.restore();
+    if (z) {
+      ctx.globalAlpha = dim ? 0.3 : 1;
+      ctx.fillStyle = z.color.c; ctx.beginPath(); ctx.arc(x + T * 0.42, y + T * 0.42, T * 0.3, 0, 7); ctx.fill();
+      ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.stroke();
+      ctx.fillStyle = '#0b0f1e'; ctx.font = `bold ${T * 0.34}px sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(z.color.shape, x + T * 0.42, y + T * 0.44);
+      const words = z.opt.split(' '), maxW = w - T * 0.5, maxH = h - T * 0.35;
+      let fs = T * 0.8, lines = [z.opt];
+      for (; fs > 9; fs -= 1) {
+        ctx.font = `800 ${fs}px Lexend, Verdana, sans-serif`; lines = []; let cur = '';
+        for (const wd of words) { const t = cur ? cur + ' ' + wd : wd; if (ctx.measureText(t).width <= maxW || !cur) cur = t; else { lines.push(cur); cur = wd; } }
+        lines.push(cur);
+        if (lines.every(l => ctx.measureText(l).width <= maxW) && lines.length * fs * 1.12 <= maxH) break;
+      }
+      ctx.save(); ctx.fillStyle = '#fff'; ctx.shadowColor = 'rgba(0,0,0,.8)'; ctx.shadowBlur = 6;
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      const lh = fs * 1.12, cy0 = y + h / 2 - (lines.length - 1) * lh / 2;
+      lines.forEach((l, i) => ctx.fillText(l, x + w / 2, cy0 + i * lh + 1));
+      ctx.restore(); ctx.globalAlpha = 1;
+    }
+  });
+  // chasers
+  G.enemies.forEach(e => {
+    const cx = e.x * T + T / 2, cy = e.y * T + T / 2;
+    if (e.dead > 0) { emoji('💫', e.spawn.x * T + T / 2, e.spawn.y * T + T / 2, T * 0.6, 0.6); return; }
+    const bob = Math.sin(now * 8 + cx) * T * 0.04;
+    shadow(cx, cy, T);
+    if (e.scared > 0) {
+      const flash = e.scared < 1.5 && Math.floor(now * 8) % 2 === 0;
+      ctx.save(); ctx.shadowColor = '#7fc4ff'; ctx.shadowBlur = T * 0.5;
+      ctx.fillStyle = flash ? '#ffffff' : '#3A8DDE'; ctx.globalAlpha = 0.7; ctx.beginPath(); ctx.arc(cx, cy, T * 0.44, 0, 7); ctx.fill(); ctx.restore();
+      emoji(e.sprite, cx, cy + bob, T * 0.7, 0.55); emoji('😱', cx + T * 0.28, cy - T * 0.3, T * 0.38);
+    } else emoji(e.sprite, cx, cy + bob, T * 0.86, e.release > 0 ? 0.45 : 1);
+  });
+  // runner
+  const p = G.player, px = p.x * T + T / 2, py = p.y * T + T / 2;
+  if (G.boostT > 0 && (p.dx || p.dy)) { // speed trail
+    for (let k = 3; k >= 1; k--) emoji(S.player, px - p.dx * T * 0.32 * k, py - p.dy * T * 0.32 * k, T * 0.8, 0.12 * (4 - k));
+    ctx.save(); ctx.strokeStyle = 'rgba(255,225,80,.8)'; ctx.lineWidth = 2;
+    for (let k = -1; k <= 1; k++) { const ox2 = p.dy ? k * T * 0.22 : 0, oy2 = p.dx ? k * T * 0.22 : 0;
+      ctx.beginPath(); ctx.moveTo(px - p.dx * T * 0.45 + ox2, py - p.dy * T * 0.45 + oy2); ctx.lineTo(px - p.dx * T * 1.1 + ox2, py - p.dy * T * 1.1 + oy2); ctx.stroke(); }
+    ctx.restore();
+  }
+  if (!(G.invuln > 0 && Math.floor(now * 10) % 2 === 0)) {
+    shadow(px, py, T);
+    const hg = ctx.createRadialGradient(px, py, 0, px, py, T * 0.6); hg.addColorStop(0, 'rgba(255,255,255,.45)'); hg.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = hg; ctx.beginPath(); ctx.arc(px, py, T * 0.6, 0, 7); ctx.fill(); emoji(S.player, px, py, T * 0.86);
+  }
+  ctx.restore();
+  if (G.state === 'countdown') {
+    const cx = viewW / 2, cy = oy + G.rows * T / 2;
+    ctx.fillStyle = 'rgba(0,0,0,.45)'; ctx.fillRect(0, 0, viewW, viewH);
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillStyle = pal.trim; ctx.font = `800 ${T * 1.1}px Lexend, Verdana, sans-serif`; ctx.fillText(G.cdLabel, cx, cy - T * 1.2);
+    ctx.fillStyle = '#fff'; ctx.font = `800 ${T * 2.2}px Lexend, Verdana, sans-serif`; ctx.fillText(Math.ceil(G.cd), cx, cy + T * 0.6);
+    ctx.fillStyle = '#e6e9f2'; ctx.font = `600 ${T * 0.5}px Lexend, Verdana, sans-serif`; ctx.fillText('Get ready!', cx, cy + T * 2.2);
+  }
+}
+function loop(ts) {
+  const dt = Math.min(0.05, (ts - last) / 1000 || 0); last = ts;
+  if (G && G.grid && $('#game').classList.contains('active')) { update(dt); render(ts); }
+  requestAnimationFrame(loop);
+}
+
+/* ===================================================================== MODALS */
+function modal(html, buttons) {
+  $('#mbox').innerHTML = html;
+  const row = document.createElement('div'); row.className = 'mbtns';
+  buttons.forEach(([label, fn, alt]) => { const b = document.createElement('button'); b.textContent = label; if (alt) b.className = 'alt'; b.onclick = () => { closeModal(); fn(); }; row.appendChild(b); });
+  $('#mbox').appendChild(row); $('#modal').classList.add('show');
+}
+function closeModal() { $('#modal').classList.remove('show'); }
+function missedHtml(list) {
+  if (!list.length) return '<p>🌟 No misses! Every answer was right.</p>';
+  return `<div class="missed"><h3>Problems to review</h3>${list.map(m => `<div class="m">${fmtQ(m.q)}<br><span class="ans">✔ ${esc(m.a)}</span> &nbsp;<span style="color:var(--muted)">(chose: ${esc(m.chose)})</span></div>`).join('')}</div>`;
+}
+function roundEnd() {
+  if (G.round >= S.rounds) return endGame(true);
+  const pct = Math.round(100 * G.roundRight / S.qPerRound);
+  modal(`<h2>Round ${G.round} complete!</h2>
+    <div class="stats"><div class="stat"><b>${G.roundRight}/${S.qPerRound}</b>correct</div><div class="stat"><b>${pct}%</b>accuracy</div><div class="stat"><b>${G.score}</b>score</div></div>
+    <p>Next round: the chasers get a little faster${Math.floor(G.round / 2) > Math.floor((G.round - 1) / 2) && G.enemyCount < 5 ? ' and one more joins the chase' : ''}. You get one heart back.</p>
+    ${missedHtml(G.roundMissed)}`,
+    [[`▶ Start Round ${G.round + 1}`, () => { G.round++; startRound(); }], ['Menu', toMenu, true]]);
+}
+function endGame(won) {
+  G.state = 'done';
+  const pct = G.totalAsked ? Math.round(100 * G.totalRight / G.totalAsked) : 0;
+  modal(`<h2>${won ? '🏆 You escaped every round!' : '💔 Out of hearts'}</h2>
+    <div class="stats"><div class="stat"><b>${G.score}</b>score</div><div class="stat"><b>${G.totalRight}/${G.totalAsked}</b>correct</div><div class="stat"><b>${pct}%</b>accuracy</div><div class="stat"><b>${G.bestStreak}</b>best streak</div></div>
+    ${missedHtml(G.missedAll)}`,
+    [['🔁 Play again', newGame], ['Menu', toMenu, true]]);
+}
+function toMenu() { G = null; showScreen('title'); refreshTitle(); try { speechSynthesis.cancel(); } catch (e) {} }
+function pause() {
+  if (!G || !['play', 'countdown'].includes(G.state)) return;
+  G.prevState = G.state; G.state = 'paused';
+  modal('<h2>⏸ Paused</h2><p>The timer and the chasers are stopped.</p>', [['▶ Resume', () => { G.state = G.prevState; }], ['Quit to menu', toMenu, true]]);
+}
+
+/* ===================================================================== INPUT */
+const KEYS = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1], a: [-1, 0], d: [1, 0], w: [0, -1], s: [0, 1], A: [-1, 0], D: [1, 0], W: [0, -1], S: [0, 1] };
+window.addEventListener('keydown', ev => {
+  if (!$('#game').classList.contains('active')) return;
+  if (ev.key === 'p' || ev.key === 'P' || ev.key === 'Escape') { if (G && G.state === 'paused') { closeModal(); G.state = G.prevState; } else pause(); ev.preventDefault(); return; }
+  const k = KEYS[ev.key]; if (k) {
+    const key = ev.key.toLowerCase(); if (!held.some(h => h.key === key)) held.unshift({ key, dx: k[0], dy: k[1] });
+    setDir(k[0], k[1]); ev.preventDefault();
+  }
+});
+window.addEventListener('keyup', ev => { const key = ev.key.toLowerCase(); held = held.filter(h => h.key !== key); });
+window.addEventListener('blur', () => { held = []; });
+function setupDpad() {
+  const coarse = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+  $('#dpad').classList.toggle('show', !!S.dpad && (coarse || 'ontouchstart' in window));
+}
+document.querySelectorAll('#dpad button').forEach(b => {
+  const [dx, dy] = b.dataset.d.split(',').map(Number);
+  b.addEventListener('pointerdown', ev => { ev.preventDefault(); setDir(dx, dy); });
+});
+// swipe anywhere on the board; turns as soon as the finger moves, and dragging a new way turns again without lifting
+let sw = null;
+cv.addEventListener('pointerdown', ev => { sw = { x: ev.clientX, y: ev.clientY }; try { cv.setPointerCapture(ev.pointerId); } catch (e) {} });
+cv.addEventListener('pointermove', ev => {
+  if (!sw) return; const dx = ev.clientX - sw.x, dy = ev.clientY - sw.y;
+  if (Math.max(Math.abs(dx), Math.abs(dy)) < 18) return;
+  if (Math.abs(dx) > Math.abs(dy)) setDir(Math.sign(dx), 0); else setDir(0, Math.sign(dy));
+  sw = { x: ev.clientX, y: ev.clientY };
+});
+['pointerup', 'pointercancel'].forEach(t => cv.addEventListener(t, () => { sw = null; }));
+$('#pauseBtn').onclick = pause;
+$('#qintro').addEventListener('pointerdown', ev => { ev.preventDefault(); startPlay(); });
+$('#soundBtn').onclick = () => { S.sound = !S.sound; saveSettings(); refreshTitle(); };
+$('#speakBtn').onclick = () => { if (G && G.q) speak(G.q.q); };
+window.addEventListener('resize', resize);
+if (window.ResizeObserver) { let lastH = 0, lastW = 0; new ResizeObserver(() => { const w = $('#cwrap'); if (w.clientHeight !== lastH || w.clientWidth !== lastW) { lastH = w.clientHeight; lastW = w.clientWidth; resize(); } }).observe($('#cwrap')); }
+
+/* ===================================================================== BOOT */
+buildPlayerPick(); refreshTitle(); requestAnimationFrame(loop);
+window.__mathMaze = { bestWidth, SUBSTEPS, MAZES, get G() { return G; }, newGame, update, setDir, buildQuestions, placeZones, genMaze, S };
+})();
+</script>
+</body>
+</html>
